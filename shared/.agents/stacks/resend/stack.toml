@@ -1,0 +1,4 @@
+[stack]
+name = "resend"
+description = "Resend transactional email service"
+requires = []

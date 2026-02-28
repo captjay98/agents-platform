@@ -1,0 +1,4 @@
+[stack]
+name = "cloudinary"
+description = "Cloudinary media management and transformation"
+requires = []

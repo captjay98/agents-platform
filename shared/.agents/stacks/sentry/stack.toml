@@ -1,0 +1,4 @@
+[stack]
+name = "sentry"
+description = "Sentry error tracking and performance monitoring"
+requires = []

@@ -1,0 +1,4 @@
+[stack]
+name = "neon-eloquent"
+description = "Neon PostgreSQL with Laravel Eloquent ORM"
+requires = ["laravel-api"]

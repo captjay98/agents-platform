@@ -1,0 +1,4 @@
+[stack]
+name = "laravel-api"
+description = "Laravel backend patterns, Eloquent safety, API resources, architecture"
+requires = []

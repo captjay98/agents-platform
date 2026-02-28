@@ -1,0 +1,4 @@
+[stack]
+name = "tanstack-frontend"
+description = "TanStack Query and Router for frontend data fetching"
+requires = []

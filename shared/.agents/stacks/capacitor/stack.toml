@@ -1,0 +1,4 @@
+[stack]
+name = "capacitor"
+description = "Capacitor native bridge for hybrid mobile apps"
+requires = []

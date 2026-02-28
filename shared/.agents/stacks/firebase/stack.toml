@@ -1,0 +1,4 @@
+[stack]
+name = "firebase"
+description = "Firebase push notifications and analytics"
+requires = []

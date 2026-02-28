@@ -1,0 +1,4 @@
+[stack]
+name = "tiptap"
+description = "Tiptap rich text editor integration"
+requires = []

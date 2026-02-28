@@ -1,0 +1,4 @@
+[stack]
+name = "zustand"
+description = "Zustand lightweight client state management"
+requires = []

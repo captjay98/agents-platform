@@ -1,0 +1,4 @@
+[stack]
+name = "tailwind"
+description = "Tailwind CSS utility-first styling"
+requires = []

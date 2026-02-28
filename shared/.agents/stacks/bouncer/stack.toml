@@ -1,0 +1,4 @@
+[stack]
+name = "bouncer"
+description = "Bouncer role/ability authorization for Laravel"
+requires = ["laravel-api"]

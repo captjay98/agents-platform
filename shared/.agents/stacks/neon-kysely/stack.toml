@@ -1,0 +1,4 @@
+[stack]
+name = "neon-kysely"
+description = "Neon PostgreSQL with Kysely type-safe query builder"
+requires = ["tanstack-fullstack"]

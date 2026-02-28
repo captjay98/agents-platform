@@ -1,0 +1,4 @@
+[stack]
+name = "typeorm"
+description = "TypeORM database patterns for NestJS"
+requires = ["nestjs"]

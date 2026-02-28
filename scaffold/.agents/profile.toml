@@ -1,0 +1,11 @@
+version = 1
+
+[selection]
+toolchains_allowed = ["kiro", "opencode", "claude", "factory", "gemini"]
+toolchains_default_enabled = ["kiro", "opencode"]
+stacks = []
+
+[policy]
+mcp_base = []
+override_mode = "narrowing_only"
+disabled_output_behavior = "prune"

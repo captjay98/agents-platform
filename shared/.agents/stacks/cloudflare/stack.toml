@@ -1,0 +1,4 @@
+[stack]
+name = "cloudflare"
+description = "Cloudflare Workers/Pages edge deployment"
+requires = []

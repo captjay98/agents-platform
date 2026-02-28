@@ -1,0 +1,4 @@
+[stack]
+name = "better-auth"
+description = "Better Auth authentication for TanStack Start apps"
+requires = ["tanstack-fullstack"]

@@ -1,0 +1,4 @@
+[stack]
+name = "bullmq"
+description = "BullMQ job queues for NestJS"
+requires = ["nestjs"]

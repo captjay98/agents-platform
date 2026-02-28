@@ -1,0 +1,4 @@
+[stack]
+name = "spatie"
+description = "Spatie Laravel permissions and roles"
+requires = ["laravel-api"]

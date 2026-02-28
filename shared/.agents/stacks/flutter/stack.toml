@@ -1,0 +1,4 @@
+[stack]
+name = "flutter"
+description = "Flutter mobile app development"
+requires = []

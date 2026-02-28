@@ -1,0 +1,4 @@
+[stack]
+name = "nextjs"
+description = "Next.js App Router frontend patterns"
+requires = []

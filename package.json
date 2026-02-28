@@ -1,0 +1,15 @@
+{
+  "name": "agents-platform",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "agents-platform": "./bin/agents-platform.mjs"
+  },
+  "scripts": {
+    "test": "bun test tooling/test/**/*.test.mjs",
+    "test:watch": "bun test --watch tooling/test/**/*.test.mjs",
+    "sync": "bun sync.mjs --all",
+    "sync:dry": "bun sync.mjs --all --dry-run"
+  },
+  "devDependencies": {}
+}

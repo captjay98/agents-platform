@@ -1,0 +1,4 @@
+[stack]
+name = "maps"
+description = "Map integration patterns (Google Maps, Mapbox)"
+requires = []

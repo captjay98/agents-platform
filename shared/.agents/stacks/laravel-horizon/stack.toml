@@ -1,0 +1,4 @@
+[stack]
+name = "laravel-horizon"
+description = "Laravel Horizon queue monitoring and management"
+requires = ["laravel-api"]

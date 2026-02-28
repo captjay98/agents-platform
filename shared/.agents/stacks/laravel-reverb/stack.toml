@@ -1,0 +1,4 @@
+[stack]
+name = "laravel-reverb"
+description = "Laravel Reverb WebSocket server for real-time features"
+requires = ["laravel-api"]

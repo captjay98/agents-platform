@@ -1,0 +1,4 @@
+[stack]
+name = "tanstack-fullstack"
+description = "TanStack Start fullstack framework with server functions"
+requires = []

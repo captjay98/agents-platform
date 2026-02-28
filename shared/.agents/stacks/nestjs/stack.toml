@@ -1,0 +1,4 @@
+[stack]
+name = "nestjs"
+description = "NestJS backend framework patterns and architecture"
+requires = []
