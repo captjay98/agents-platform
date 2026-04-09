@@ -13,3 +13,5 @@ These rules apply to all Laravel code:
 5. **Always rate-limit auth endpoints** — separate limiter from API limiter
 6. **Never log sensitive data** — no passwords, tokens, or full email addresses in logs
 7. **Always set token expiry** — `createToken(..., expiresAt: now()->addDays(30))`
+
+7. **Always declare strict types** — every PHP file starts with `declare(strict_types=1)`. Every function has typed parameters and return types.
