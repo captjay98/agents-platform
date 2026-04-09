@@ -5,44 +5,61 @@ title: agents-platform
 
 # agents-platform
 
-**Give your AI agents project-specific knowledge.**
+**A complete AI agent configuration system for multi-project workspaces.**
 
-Stop getting generic code from AI agents. agents-platform distributes the right skills to the right projects based on their tech stack — automatically.
+Distribute skills, personas, commands, rules, and project context to AI agents — scoped to each project's tech stack. Supports Claude, Kiro, Gemini, OpenCode, and Factory.
 
 ---
 
 ## The Problem
 
-You have multiple projects with different tech stacks. AI agents give generic advice because they don't know your conventions. Manually copying skills between projects leads to drift, duplication, and stale patterns.
+You have multiple projects with different tech stacks. AI agents give generic advice because they don't know your conventions, architecture, or team roles. Manually configuring each project's agent setup leads to drift, duplication, and stale patterns.
 
 ## The Solution
 
 ```
 agents-platform (central hub)
      │
-     ├── 76 upstream skills (auto-updated from open-source repos)
-     ├── 71 custom skills (your conventions, patterns, integrations)
-     ├── 30 stacks (laravel, tanstack, flutter, nestjs, nextjs, etc.)
+     ├── 147 skills      (76 auto-updated from open-source repos)
+     ├── 9 personas       (role-based agent identities)
+     ├── 22 commands      (executable workflows / runbooks)
+     ├── 7+ rules         (coding constraints per stack)
+     ├── 10 steering docs (project context)
+     ├── 5 renderers      (Claude, Kiro, Gemini, OpenCode, Factory)
+     ├── 30 stacks        (technology-specific bundles)
      │
-     └── sync ──► Project A (picks stacks → gets matching skills)
-                  Project B (different stacks → different skills)
-                  Project C (...)
+     └── sync ──► Project A (picks stacks → gets matching config)
+                  Project B (different stacks → different config)
 ```
+
+## What Gets Distributed
+
+| Component | What it does |
+|-----------|-------------|
+| **Skills** | Technical knowledge — patterns, conventions, integrations |
+| **Personas** | Role-based identities: backend-engineer, frontend-engineer, qa-engineer, security-engineer, etc. |
+| **Commands** | Executable workflows: code-review, deploy, incident-commander, performance-audit |
+| **Rules** | Coding constraints agents must follow: git-safety, guard-clauses, no-todos |
+| **Steering** | Project context: product map, tech stack, coding standards, testing guidelines |
+| **Hooks** | Auto-triggered behaviors on session start |
+| **Memory** | Institutional knowledge that persists across sessions |
 
 ## Before / After
 
-**Without skills** — agent produces generic code:
+**Without agents-platform:**
 
 ```typescript
+// Agent produces generic code
 app.post('/api/orders', async (req, res) => {
   const order = await db.query('INSERT INTO orders ...')
   res.json(order)
 })
 ```
 
-**With skills** — agent follows your architecture:
+**With agents-platform:**
 
 ```typescript
+// Agent follows your four-layer architecture, error handling, and auth patterns
 export const createOrderFn = createServerFn({ method: 'POST' })
   .inputValidator(createOrderSchema)
   .handler(async ({ data }) => {
@@ -53,32 +70,37 @@ export const createOrderFn = createServerFn({ method: 'POST' })
   })
 ```
 
-## Numbers
+## Supported AI Tools
 
-| | |
-|---|---|
-| **Total Skills** | 147 |
-| **Upstream (auto-updatable)** | 76 from 12 open-source repos |
-| **Custom** | 71 hand-written for your conventions |
-| **Stacks** | 30 technology stacks |
-| **AI Tools** | Claude, Kiro, Gemini, OpenCode, Factory |
+| Tool | Renderer | Output |
+|------|----------|--------|
+| Claude Code | `claude.mjs` | `.claude/CLAUDE.md` |
+| Kiro | `kiro.mjs` | `.kiro/` + subagent templates |
+| Gemini | `gemini.mjs` | `.gemini/` |
+| OpenCode | `opencode.mjs` | `.opencode/` |
+| Factory | `factory.mjs` | `.factory/FACTORY.md` |
 
-## Supported Stacks
+Renderers are pluggable — drop a `.mjs` file in `tooling/renderers/` and it's auto-discovered.
+
+## Personas
+
+9 role-based personas with distinct expertise and delegation patterns:
+
+`backend-engineer` · `frontend-engineer` · `fullstack-engineer` · `devops-engineer` · `security-engineer` · `qa-engineer` · `product-architect` · `data-analyst` · `mobile-engineer`
+
+Each includes autonomous instructions, real code patterns, critical constraints, and delegation priorities.
+
+## Stacks
+
+30 technology stacks. Projects opt in via `profile.toml`:
 
 `tanstack-fullstack` · `tanstack-frontend` · `laravel-api` · `nextjs` · `nestjs` · `flutter` · `cloudflare` · `sentry` · `tailwind` · `better-auth` · `neon-kysely` · `neon-eloquent` · `typeorm` · `bullmq` · `firebase` · `payments-laravel` · `payments-typescript` · `payments-nestjs` · `laravel-cloud` · `laravel-reverb` · `laravel-horizon` · `spatie` · `bouncer` · `meilisearch` · `zustand` · `tiptap` · `cloudinary` · `resend` · `capacitor` · `maps`
 
 ## Upstream Sources
 
-Skills auto-updated from:
+76 skills auto-updated from open-source repos:
 
-- [Sentry](https://github.com/getsentry/sentry-for-ai) — SDKs + workflow
-- [Cloudflare](https://github.com/cloudflare/skills) — Workers, Durable Objects, Wrangler
-- [Vercel](https://github.com/vercel-labs/next-skills) — Next.js best practices
-- [TanStack](https://github.com/tanstack/agent-skills) — Query, Router, Start
-- [Anthropic](https://github.com/anthropics/skills) — Frontend design
-- [Laravel](https://github.com/iSerter/laravel-claude-agents) — 14 Laravel patterns
-- [shadcn/ui](https://github.com/shadcn-ui/ui) — Component management
-- [Neon](https://github.com/neondatabase/agent-skills) — Serverless Postgres
+[Sentry](https://github.com/getsentry/sentry-for-ai) · [Cloudflare](https://github.com/cloudflare/skills) · [Vercel](https://github.com/vercel-labs/next-skills) · [TanStack](https://github.com/tanstack/agent-skills) · [Anthropic](https://github.com/anthropics/skills) · [Laravel](https://github.com/iSerter/laravel-claude-agents) · [Firebase](https://github.com/nicholasgriffintn/firebase-agent-skills) · [shadcn/ui](https://github.com/shadcn-ui/ui) · [Neon](https://github.com/neondatabase/agent-skills) · [sergiodxa](https://github.com/sergiodxa/agent-skills) · [ibelick](https://github.com/ibelick/ui-skills)
 
 ## Quick Start
 
@@ -87,24 +109,29 @@ Skills auto-updated from:
 git clone <repo-url> && cd agents-platform
 bun install && bun link
 
-# Interactive setup (auto-detects your tech stack)
+# Interactive setup (auto-detects tech stack)
 agents-platform setup ~/projects/my-app
 
 # Or manual
 agents-platform init ~/projects/my-app
 vim ~/projects/my-app/.agents/profile.toml
 agents-platform sync --all
+
+# Check health
+agents-platform status
 ```
 
-## How It Works
+## Numbers
 
-1. **Declare stacks** in your project's `profile.toml`
-2. **Sync** delivers matching skills, rules, and configs
-3. **Build** generates tool-specific configs (`.claude/`, `.kiro/`, etc.)
-4. **AI agents** read the skills and produce project-aware code
-
-Local project skills always win — your customizations are never overwritten.
+| | |
+|---|---|
+| **Skills** | 147 (76 upstream + 71 custom) |
+| **Personas** | 9 role-based identities |
+| **Commands** | 22 executable workflows |
+| **Stacks** | 30 technology bundles |
+| **Renderers** | 5 AI tools supported |
+| **Global skills** | 26 tool-level skills |
 
 ---
 
-[View on GitHub](https://github.com/user/agents-platform) · [Contributing](https://github.com/user/agents-platform/blob/main/CONTRIBUTING.md)
+[View on GitHub](https://github.com/captjay98/agents-platform) · [Contributing](https://github.com/captjay98/agents-platform/blob/main/CONTRIBUTING.md)

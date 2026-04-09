@@ -22,6 +22,62 @@ agents-platform (central hub)
 
 Each project declares its stacks in `profile.toml`. Sync delivers only the relevant skills. A Laravel project gets Laravel skills. A TanStack project gets TanStack skills. No pollution.
 
+## What's Included
+
+agents-platform isn't just skills — it's a complete agent configuration system:
+
+| Component | Count | What it does |
+|-----------|-------|-------------|
+| **Skills** | 147 | Technical knowledge — patterns, conventions, integrations |
+| **Personas** | 9 | Role-based agent identities (backend-engineer, frontend-engineer, qa-engineer, etc.) |
+| **Commands** | 22 | Executable workflows (code-review, deploy, incident-commander, performance-audit, etc.) |
+| **Rules** | 7 shared + per-stack | Coding constraints agents must follow (git-safety, guard-clauses, no-todos, etc.) |
+| **Steering docs** | 10 | Project context (product map, tech stack, coding standards, testing guidelines) |
+| **Hooks** | Session-start | Auto-triggered behaviors (e.g., remind agent of project context on session start) |
+| **Memory** | Per-project | Institutional knowledge that persists across sessions |
+| **Renderers** | 5 | Generate configs for Claude, Kiro, Gemini, OpenCode, Factory |
+| **Global skills** | 26 | Tool-level skills shared across all AI tools via `~/.agents/` symlinks |
+| **Stacks** | 30 | Technology-specific bundles of skills + rules |
+
+### Personas
+
+9 role-based personas with distinct expertise, communication style, and delegation patterns:
+
+```
+backend-engineer    frontend-engineer    fullstack-engineer
+devops-engineer     security-engineer    qa-engineer
+product-architect   data-analyst         mobile-engineer
+```
+
+Each persona includes autonomous instructions, real code patterns, critical constraints, and delegation priorities. Kiro gets JSON templates for subagent spawning.
+
+### Commands
+
+22 executable workflows — not prompts, but runbooks with actual commands, expected outputs, and GO/NO-GO criteria:
+
+```
+code-review          commit-plan          execute
+performance-audit    accessibility-audit  ui-audit
+cloudflare-deploy    cloudflare-debug     cloudflare-setup
+incident-commander   release-readiness    test-coverage
+sentry-setup         sentry-triage        neon-setup
+plan-feature         sync-docs            ...
+```
+
+### Renderers
+
+Each renderer transforms `.agents/` content into tool-specific config:
+
+| Renderer | Output | What it generates |
+|----------|--------|-------------------|
+| Claude | `.claude/CLAUDE.md` | Single markdown with all personas, skills, rules |
+| Kiro | `.kiro/` | Steering docs, skill files, subagent templates |
+| Gemini | `.gemini/` | Gemini-compatible agent config |
+| OpenCode | `.opencode/` | OpenCode agent config |
+| Factory | `.factory/FACTORY.md` | Factory-compatible markdown |
+
+Drop a new `.mjs` file in `tooling/renderers/` and it's auto-discovered.
+
 ## Before / After
 
 Without skills, an AI agent produces generic code:
@@ -210,18 +266,6 @@ Hand-written for your conventions. Examples:
 | Projavi | Laravel API + TanStack frontend + Flutter mobile + Cloudflare | 14 | 99 (6 local) |
 | DeliveryNexus | Laravel API + TanStack frontend + Flutter mobile + Multi-tenant | 16 | 116 (21 local) |
 | Eweko | Next.js + NestJS + TypeORM + BullMQ + Cloudflare | 10 | 58 (5 local) |
-
-## Renderers
-
-Renderers transform `.agents/` content into tool-specific config files. Auto-discovered — drop a `.mjs` file in `tooling/renderers/`:
-
-| Renderer | Output |
-|----------|--------|
-| `claude.mjs` | `.claude/CLAUDE.md` |
-| `kiro.mjs` | `.kiro/` |
-| `gemini.mjs` | `.gemini/` |
-| `opencode.mjs` | `.opencode/` |
-| `factory.mjs` | `.factory/` |
 
 ## Adding a New Project
 
