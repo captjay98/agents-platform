@@ -1,36 +1,73 @@
 # agents-platform
 
-Stack-based AI agent configuration system. Distributes rules, skills, personas, commands, and hooks to managed projects through a layered sync system. Supports Claude, Kiro, Gemini, OpenCode, and Factory.
+Stack-based AI agent skill distribution for multi-project workspaces. Give every project the right skills for its tech stack — automatically.
+
+## The Problem
+
+You have multiple projects with different tech stacks. AI agents (Claude, Kiro, Cursor, etc.) give generic advice because they don't know your conventions. Manually copying skills between projects leads to drift, duplication, and stale patterns.
+
+## The Solution
+
+```
+agents-platform (central hub)
+     │
+     ├── 76 upstream skills (auto-updated from open-source repos)
+     ├── 71 custom skills (your conventions, patterns, integrations)
+     ├── 30 stacks (laravel-api, tanstack-fullstack, flutter, nestjs, etc.)
+     │
+     └── sync ──► Project A (picks stacks → gets matching skills)
+                  Project B (different stacks → different skills)
+                  Project C (...)
+```
+
+Each project declares its stacks in `profile.toml`. Sync delivers only the relevant skills. A Laravel project gets Laravel skills. A TanStack project gets TanStack skills. No pollution.
 
 ## Quick Start
 
 ```bash
-# Install CLI
-bun link
-
-# Sync all registered projects
-agents-platform sync
-
-# Preview changes without writing
-agents-platform sync --dry-run
+# Install
+git clone <repo-url> && cd agents-platform
+bun install && bun link
 
 # Bootstrap a new project
-agents-platform init ~/projects/new-app
+agents-platform init ~/projects/my-app
 
-# Check all projects for issues
-agents-platform validate
+# Edit stacks
+vim ~/projects/my-app/.agents/profile.toml
+# stacks = ["laravel-api", "flutter", "cloudflare", "sentry", "tailwind"]
+
+# Sync skills to all projects
+agents-platform sync --all
+
+# Update upstream skills (76 from 12 open-source repos)
+bun update-skills.mjs --all
+agents-platform sync --all
 ```
+
+## How It Works
+
+When you run `agents-platform sync`, five layers apply in order:
+
+| Layer | Source | Behavior | Purpose |
+|-------|--------|----------|---------| 
+| 0. Global | `global/.agents/skills/` | Symlink to `~/.agents/skills/` | Tool-level skills shared across all AI tools |
+| 1. Tooling | `tooling/` | Always overwrites | Build scripts, renderers |
+| 2. Scaffold | `scaffold/.agents/` | Skip existing | Project templates (profile, personas, commands) |
+| 3. Shared | `shared/.agents/skills/` | Skip existing | Universal skills all projects get |
+| 4. Stacks | `shared/.agents/stacks/<name>/` | Always overwrites | Stack-specific skills, rules |
+
+Local project skills always win — if a project has its own version of a skill, sync won't overwrite it.
 
 ## CLI
 
 ```
 agents-platform init <path>          Bootstrap a new project from scaffold
-agents-platform sync [--all]         Sync tooling and stacks to projects [--dry-run] [--tooling-only]
+agents-platform sync [--all]         Sync to projects [--dry-run] [--tooling-only]
 agents-platform build                Build AGENTS.md and tool configs (run in project dir)
 agents-platform lint                 Lint .agents/ content (run in project dir)
-agents-platform signoff              Full quality gate: build + lint + verify + check-mcp
-agents-platform validate             Check all projects for issues (deps, placeholders)
-agents-platform add-stack <name>     Create a new stack skeleton [--community]
+agents-platform signoff              Full quality gate: build + lint + verify
+agents-platform validate             Check all projects for issues
+agents-platform add-stack <name>     Create a new stack skeleton
 agents-platform list-stacks          Show all available stacks
 agents-platform list-projects        Show registered projects and their stacks
 agents-platform list-renderers       Show available AI tool renderers
@@ -40,94 +77,79 @@ agents-platform list-renderers       Show available AI tool renderers
 
 ```
 agents-platform/
-├── bin/
-│   └── agents-platform.mjs   # CLI entry point
-├── tooling/                   # Canonical scripts → synced to projects
-│   ├── build.mjs              # Generate AGENTS.md + toolchain configs
-│   ├── verify.mjs             # Validate .agents/ structure
-│   ├── lint.mjs               # Lint agent content
-│   ├── config.mjs             # Shared config helpers (TOML parser)
-│   ├── toolchains.mjs         # Auto-discovers renderers
-│   ├── agents.mjs             # Agent content reader
-│   ├── signoff.mjs            # Sign-off workflow
-│   ├── check-mcp.mjs          # MCP server validation
-│   └── renderers/             # Pluggable — drop a .mjs file, it's picked up
-│       ├── common.mjs         # Shared helpers
-│       ├── claude.mjs
-│       ├── kiro.mjs
-│       ├── gemini.mjs
-│       ├── opencode.mjs
-│       └── factory.mjs
-├── scaffold/                  # Template for new projects (copied once)
+├── bin/agents-platform.mjs          # CLI entry point
+├── sync.mjs                         # Sync engine
+├── update-skills.mjs                # Pull latest from upstream repos
+├── bootstrap.mjs                    # Scaffold + sync for new projects
+├── projects.json                    # Registered project paths
+├── global/.agents/skills/           # 26 tool-level skills (symlinked to ~/.agents/)
+├── shared/
 │   └── .agents/
-│       ├── commands/          # 21 workflow commands
-│       ├── personas/          # 9 role templates
-│       ├── rules/             # 9 coding rules
-│       ├── skills/            # 4 universal skills
-│       ├── steering/          # 10 project context docs
-│       ├── memory/            # Institutional knowledge template
-│       ├── includes/shared/   # Delegation pattern template
-│       └── profile.toml
-├── global/                    # Tool-level skills (symlinked to ~/.agents/skills/)
-│   └── .agents/
-│       └── skills/            # 26 workflow, quality, and orchestration skills
-├── shared/                    # Stack-based content synced to projects
-│   └── .agents/
-│       ├── skills/            # 18 shared skills (all projects)
-│       ├── rules/             # Universal rules
-│       ├── stacks/            # 30 technology stacks with scoped skills
-│       └── skills-manifest.json  # Tracks 76 upstream skill sources
-├── sync.mjs                   # Sync engine
-├── update-skills.mjs          # Pull latest from upstream skill repos
-├── bootstrap.mjs              # Scaffold + sync for new projects
-└── projects.json              # Registered project paths
+│       ├── skills/                  # 18 shared skills (all projects)
+│       ├── stacks/                  # 30 technology stacks
+│       ├── rules/                   # Universal rules
+│       └── skills-manifest.json     # Tracks 76 upstream sources
+├── scaffold/.agents/                # Template for new projects
+└── tooling/                         # Build scripts + renderers
+    └── renderers/                   # claude, kiro, gemini, opencode, factory
 ```
-
-## How Sync Works
-
-When you run `agents-platform sync`, five layers apply in order:
-
-| Layer | Source | Behavior | Purpose |
-|-------|--------|----------|---------|
-| 0. Global skills | `global/.agents/skills/` | Symlink to `~/.agents/skills/` | Tool-level skills (brainstorming, debugging, etc.) |
-| 1. Tooling | `tooling/` | Always overwrites | Build scripts, renderers |
-| 2. Scaffold | `scaffold/.agents/` | Skip existing | Project-level defaults (profile, templates) |
-| 3. Shared universal | `shared/.agents/` (excl. stacks/) | Skip existing | Universal rules, skills |
-| 4. Stacks | `shared/.agents/stacks/<name>/` | Always overwrites | Stack-specific content (excl. stack.toml) |
-
-Global skills are symlinked, not copied — `~/.agents/skills/brainstorming` points to the platform's `global/.agents/skills/brainstorming`. If you symlink `~/.agents/skills/` into other tool directories (`~/.kiro/skills/`, `~/.claude/skills/`, etc.), all tools share the same skills from one source.
 
 ## Stacks
 
-Each stack is a directory under `shared/.agents/stacks/` with skills, rules, and a `stack.toml` manifest:
+Each stack is a directory under `shared/.agents/stacks/` containing skills and rules for a specific technology:
 
 ```toml
+# shared/.agents/stacks/laravel-api/stack.toml
 [stack]
 name = "laravel-api"
 description = "Laravel API patterns and conventions"
-category = "core"
 requires = []
 ```
 
 Projects opt in via `profile.toml`:
 
 ```toml
-stacks = ["laravel-api", "bouncer", "neon-eloquent"]
+# my-project/.agents/profile.toml
+stacks = ["laravel-api", "flutter", "cloudflare", "sentry", "tailwind"]
 ```
 
-Stack dependencies are validated at sync time — if `bouncer` requires `laravel-api` and it's missing, you get a warning.
+Run `agents-platform list-stacks` to see all 30 stacks.
 
-Run `agents-platform list-stacks` to see all 30 stacks with their dependencies.
+## Skills
 
-## Renderers
+**147 total** — 76 upstream (auto-updatable) + 71 custom.
 
-Renderers transform `.agents/` content into tool-specific config files. They're auto-discovered — drop a `.mjs` file in `tooling/renderers/` that exports `meta` and a render function, and it works.
+### Upstream (76 skills from 12 repos)
 
-See `tooling/renderers/CONTRIBUTING.md` for the full contract.
+Auto-updated via `bun update-skills.mjs --all`. Sources include:
 
-```bash
-agents-platform list-renderers   # Show all renderers with capabilities
-```
+| Source | What |
+|--------|------|
+| `getsentry/sentry-for-ai` | Sentry SDKs + workflow |
+| `iSerter/laravel-claude-agents` | Laravel patterns |
+| `cloudflare/skills` | Workers, Durable Objects, Wrangler |
+| `vercel-labs/next-skills` | Next.js best practices |
+| `tanstack/agent-skills` | TanStack Query/Router/Start |
+| `anthropics/skills` | Frontend design, webapp testing |
+| `sergiodxa/agent-skills` | React, JS, async, accessibility |
+| `ibelick/ui-skills` | UI validation, accessibility, metadata |
+
+### Custom (71 skills)
+
+Hand-written for your conventions. Examples:
+- `tanstack-four-layer-arch` — Transport → Application → Domain → Repository
+- `laravel-api-conventions` — Controller → Service → Model, ApiResponseTrait
+- `flutter-conventions` — Riverpod, GoRouter, Dio, Freezed
+- `financial-patterns` — Decimal precision, Naira/kobo, currency formatting
+- `paystack-laravel` / `paystack-nestjs` — Payment provider integrations
+
+### Payment Stacks (split by framework)
+
+| Stack | Skills | Projects |
+|-------|--------|----------|
+| `payments-laravel` | paystack-laravel, nomba-laravel, squadco-laravel | Projavi, DeliveryNexus |
+| `payments-typescript` | nomba-typescript, squadco-typescript | LivestockAI |
+| `payments-nestjs` | paystack-nestjs | Eweko |
 
 ## Managed Projects
 
@@ -138,16 +160,31 @@ agents-platform list-renderers   # Show all renderers with capabilities
 | DeliveryNexus | Laravel API + TanStack frontend + Flutter mobile + Multi-tenant | 16 | 116 (21 local) |
 | Eweko | Next.js + NestJS + TypeORM + BullMQ + Cloudflare | 10 | 58 (5 local) |
 
+## Renderers
+
+Renderers transform `.agents/` content into tool-specific config files. Auto-discovered — drop a `.mjs` file in `tooling/renderers/`:
+
+| Renderer | Output |
+|----------|--------|
+| `claude.mjs` | `.claude/CLAUDE.md` |
+| `kiro.mjs` | `.kiro/` |
+| `gemini.mjs` | `.gemini/` |
+| `opencode.mjs` | `.opencode/` |
+| `factory.mjs` | `.factory/` |
+
 ## Adding a New Project
 
 ```bash
 # 1. Bootstrap
 agents-platform init ~/projects/new-app --toolchains kiro,claude
 
-# 2. Register in projects.json
-# 3. Fill <!-- PROJECT: --> placeholders in templates
-# 4. Declare stacks in .agents/profile.toml
-# 5. Build
+# 2. Configure stacks
+vim ~/projects/new-app/.agents/profile.toml
+
+# 3. Sync
+agents-platform sync --all
+
+# 4. Build tool configs
 cd ~/projects/new-app && bun .agents/scripts/build.mjs
 ```
 
@@ -155,58 +192,25 @@ cd ~/projects/new-app && bun .agents/scripts/build.mjs
 
 ```bash
 agents-platform add-stack prisma
+# Creates shared/.agents/stacks/prisma/ with skills/, rules/, stack.toml
+# Add SKILL.md files, then declare in project profile.toml files
 ```
-
-Creates `shared/.agents/stacks/prisma/` with `skills/`, `rules/`, and `stack.toml`. Add content, then declare it in project `profile.toml` files.
-
-## Skills
-
-**147 total** — 76 upstream (auto-updatable) + 71 custom (hand-written).
-
-| Scope | Count | Description |
-|-------|-------|-------------|
-| Shared | 18 | All projects get these (7 custom + 11 upstream) |
-| Stack-scoped | 129 | Projects opt-in via `profile.toml` stacks |
-
-### Upstream Sources (76 skills from 12 repos)
-
-Tracked in `shared/.agents/skills-manifest.json`. Update all with:
-
-```bash
-bun update-skills.mjs --all    # Pull latest from all upstream repos
-bun sync.mjs --all             # Push to all projects
-```
-
-Key sources: `getsentry/sentry-for-ai`, `iSerter/laravel-claude-agents`, `cloudflare/skills`, `vercel-labs/next-skills`, `tanstack/agent-skills`, `anthropics/skills`, `sergiodxa/agent-skills`, `ibelick/ui-skills`, `neondatabase/agent-skills`.
-
-### Custom Skills (71)
-
-Stack-scoped skills written for your conventions: TanStack four-layer architecture, Laravel API conventions, Flutter conventions, payment provider integrations (Paystack, Nomba, Squad), Kysely/TypeORM patterns, Better Auth setup, and more.
-
-### Payment Stacks (split by framework)
-
-| Stack | Skills | Projects |
-|-------|--------|----------|
-| `payments-laravel` | paystack-laravel, nomba-laravel, squadco-laravel | Projavi, DeliveryNexus |
-| `payments-typescript` | nomba-typescript, squadco-typescript | LivestockAI |
-| `payments-nestjs` | paystack-nestjs | Eweko |
 
 ## Global Skills
 
-The platform manages 26 tool-level skills (workflow, code quality, agent orchestration) that live at `~/.agents/skills/` via symlinks. These are shared across all AI tools by symlinking from each tool's skills directory:
+26 tool-level skills (workflow, code quality, agent orchestration) live at `~/.agents/skills/` via symlinks. Shared across all AI tools:
 
 ```
-~/.kiro/skills/brainstorming     → ~/.agents/skills/brainstorming → agents-platform/global/...
-~/.claude/skills/brainstorming   → ~/.agents/skills/brainstorming → agents-platform/global/...
-~/.factory/skills/brainstorming  → ~/.agents/skills/brainstorming → agents-platform/global/...
+~/.kiro/skills/brainstorming   → ~/.agents/skills/brainstorming → agents-platform/global/...
+~/.claude/skills/brainstorming → ~/.agents/skills/brainstorming → agents-platform/global/...
 ```
-
-`agents-platform sync` creates the `~/.agents/skills/` symlinks automatically. The tool-directory symlinks (`~/.kiro/skills/` → `~/.agents/skills/`) are set up once manually.
-
-If a real (non-symlink) directory exists in `~/.agents/skills/`, sync won't touch it — your custom skills are safe.
 
 ## Testing
 
 ```bash
 bun test
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
