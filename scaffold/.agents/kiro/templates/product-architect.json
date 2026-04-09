@@ -1,0 +1,11 @@
+{
+  "name": "product-architect",
+  "description": "Product architecture subagent",
+  "prompt": "file://./product-architect.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

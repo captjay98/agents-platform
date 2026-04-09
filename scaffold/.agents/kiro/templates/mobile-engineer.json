@@ -1,0 +1,11 @@
+{
+  "name": "mobile-engineer",
+  "description": "Mobile engineering subagent",
+  "prompt": "file://./mobile-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

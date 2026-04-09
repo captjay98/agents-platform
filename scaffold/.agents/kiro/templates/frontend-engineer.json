@@ -1,0 +1,11 @@
+{
+  "name": "frontend-engineer",
+  "description": "Frontend engineering subagent",
+  "prompt": "file://./frontend-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

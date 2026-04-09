@@ -1,0 +1,11 @@
+{
+  "name": "devops-engineer",
+  "description": "DevOps engineering subagent",
+  "prompt": "file://./devops-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

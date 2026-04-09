@@ -1,0 +1,11 @@
+{
+  "name": "data-analyst",
+  "description": "Data analysis subagent",
+  "prompt": "file://./data-analyst.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

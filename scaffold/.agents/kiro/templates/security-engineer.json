@@ -1,0 +1,11 @@
+{
+  "name": "security-engineer",
+  "description": "Security engineering subagent",
+  "prompt": "file://./security-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

@@ -1,0 +1,11 @@
+{
+  "name": "fullstack-engineer",
+  "description": "Fullstack engineering subagent",
+  "prompt": "file://./fullstack-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}

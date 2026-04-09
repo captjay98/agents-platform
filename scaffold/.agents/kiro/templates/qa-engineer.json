@@ -1,0 +1,11 @@
+{
+  "name": "qa-engineer",
+  "description": "Quality engineering subagent",
+  "prompt": "file://./qa-engineer.md",
+  "tools": [
+    "@builtin",
+    "@sequential-thinking"
+  ],
+  "model": "auto",
+  "useLegacyMcpJson": true
+}
