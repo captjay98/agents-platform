@@ -107,23 +107,7 @@
       "method": "npx-skills",
       "installed": "2026-02-28"
     },
-    "prompt-refiner": {
-      "source": "custom",
-      "method": "manual",
-      "note": "Similar to factory-ai/factory@prompt-refiner-claude but customized",
-      "installed": "2026-02-28"
-    },
-    "code-review-checklist": {
-      "source": "custom",
-      "method": "manual",
-      "installed": "2026-02-28"
-    },
     "documentation-standards": {
-      "source": "custom",
-      "method": "manual",
-      "installed": "2026-02-28"
-    },
-    "accessibility-patterns": {
       "source": "custom",
       "method": "manual",
       "installed": "2026-02-28"
