@@ -1,0 +1,70 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - name: Validate manifest
+        run: |
+          bun -e '
+            const m = JSON.parse(await Bun.file("shared/.agents/skills-manifest.json").text())
+            const count = Object.keys(m.skills).length
+            console.log(`✓ Manifest valid: ${count} upstream skills tracked`)
+          '
+
+      - name: Check for name clashes
+        run: |
+          bun -e '
+            import fs from "node:fs"
+            import path from "node:path"
+            const manifest = JSON.parse(fs.readFileSync("shared/.agents/skills-manifest.json", "utf8"))
+            const upstreamNames = new Set(Object.keys(manifest.skills))
+            const customNames = new Set()
+            const dirs = ["shared/.agents/skills", ...fs.readdirSync("shared/.agents/stacks").map(s => `shared/.agents/stacks/${s}/skills`)]
+            for (const dir of dirs) {
+              if (!fs.existsSync(dir)) continue
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                if (!entry.isDirectory()) continue
+                if (fs.existsSync(path.join(dir, entry.name, "SKILL.md")) && !upstreamNames.has(entry.name)) {
+                  if (upstreamNames.has(entry.name)) {
+                    console.error(`CLASH: ${entry.name} exists as both upstream and custom`)
+                    process.exit(1)
+                  }
+                  customNames.add(entry.name)
+                }
+              }
+            }
+            console.log(`✓ No clashes (${upstreamNames.size} upstream, ${customNames.size} custom)`)
+          '
+
+      - name: Verify all stacks have stack.toml
+        run: |
+          for stack in shared/.agents/stacks/*/; do
+            if [ ! -f "$stack/stack.toml" ]; then
+              echo "FAIL: $stack missing stack.toml"
+              exit 1
+            fi
+          done
+          echo "✓ All stacks have stack.toml"
+
+      - name: Count skills
+        run: |
+          total=0
+          for skill in shared/.agents/skills/*/SKILL.md shared/.agents/stacks/*/skills/*/SKILL.md; do
+            [ -f "$skill" ] && total=$((total + 1))
+          done
+          echo "✓ $total total skills"

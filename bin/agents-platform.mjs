@@ -54,6 +54,11 @@ const commands = {
     run('bootstrap.mjs', extraArgs)
   },
 
+  setup() {
+    const extraArgs = positional[0] ? [positional[0]] : []
+    run('interactive-init.mjs', extraArgs)
+  },
+
   sync() {
     const extraArgs = []
     if (flags.has('--all')) extraArgs.push('--all')
@@ -152,6 +157,64 @@ const commands = {
     }
   },
 
+  status: async () => {
+    const { loadProjects, readProjectStacks, listAllStacks } = await import(path.join(ROOT, 'sync.mjs'))
+    const projects = loadProjects()
+    if (!projects.length) { console.log('No projects in projects.json'); return }
+
+    const STACKS_DIR = path.join(ROOT, 'shared', '.agents', 'stacks')
+    const SKILLS_DIR = path.join(ROOT, 'shared', '.agents', 'skills')
+    const manifestPath = path.join(ROOT, 'shared', '.agents', 'skills-manifest.json')
+    const manifest = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')) : { skills: {} }
+
+    // Platform totals
+    let totalSkills = 0, upstream = 0, custom = 0
+    for (const dir of [SKILLS_DIR, ...fs.readdirSync(STACKS_DIR).map(s => path.join(STACKS_DIR, s, 'skills'))]) {
+      if (!fs.existsSync(dir)) continue
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue
+        if (fs.existsSync(path.join(dir, entry.name, 'SKILL.md'))) {
+          totalSkills++
+          if (manifest.skills[entry.name]) upstream++; else custom++
+        }
+      }
+    }
+
+    console.log(`\n  Platform: ${totalSkills} skills (${upstream} upstream + ${custom} custom)`)
+    console.log(`  Stacks:   ${fs.readdirSync(STACKS_DIR, { withFileTypes: true }).filter(d => d.isDirectory()).length}`)
+    console.log(`  Upstream: ${Object.keys(manifest.skills).length} tracked\n`)
+
+    console.log(`  ${'Project'.padEnd(16)} ${'Stacks'.padEnd(8)} ${'Skills'.padEnd(8)} ${'Local'.padEnd(8)} Status`)
+    console.log(`  ${'─'.repeat(16)} ${'─'.repeat(8)} ${'─'.repeat(8)} ${'─'.repeat(8)} ${'─'.repeat(20)}`)
+
+    for (const p of projects) {
+      const name = path.basename(p.path)
+      const agentsDir = path.join(p.path, '.agents')
+      if (!fs.existsSync(agentsDir)) { console.log(`  ${name.padEnd(16)} —        —        —        .agents/ missing`); continue }
+
+      const stacks = readProjectStacks(p.path)
+      const skillsDir = path.join(agentsDir, 'skills')
+      let totalProjectSkills = 0, localOnly = 0
+      if (fs.existsSync(skillsDir)) {
+        for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+          if (!entry.isDirectory() || entry.name === '_TEMPLATE') continue
+          if (!fs.existsSync(path.join(skillsDir, entry.name, 'SKILL.md'))) continue
+          totalProjectSkills++
+          // Check if it's local-only
+          let inPlatform = false
+          if (fs.existsSync(path.join(SKILLS_DIR, entry.name))) inPlatform = true
+          for (const s of fs.readdirSync(STACKS_DIR)) {
+            if (fs.existsSync(path.join(STACKS_DIR, s, 'skills', entry.name))) { inPlatform = true; break }
+          }
+          if (!inPlatform) localOnly++
+        }
+      }
+
+      console.log(`  ${name.padEnd(16)} ${String(stacks.length).padEnd(8)} ${String(totalProjectSkills).padEnd(8)} ${String(localOnly).padEnd(8)} ✓`)
+    }
+    console.log()
+  },
+
   'list-renderers': async () => {
     const { renderers } = await import(path.join(ROOT, 'tooling', 'toolchains.mjs'))
     console.log(`${'Name'.padEnd(12)}  ${'MCP'.padEnd(5)}  Output Dirs`)
@@ -167,12 +230,14 @@ if (!command || command === '--help' || command === '-h') {
   console.log(`agents-platform — AI agent configuration system
 
 Commands:
-  init <path>          Bootstrap a new project from scaffold
+  setup [<path>]       Interactive project setup with stack auto-detection
+  init <path>          Bootstrap a new project (non-interactive)
   sync [--all]         Sync tooling and stacks to projects [--dry-run] [--tooling-only]
   build                Build AGENTS.md and tool configs (run in project dir)
   lint                 Lint .agents/ content (run in project dir)
   signoff              Full quality gate: build + lint + verify + check-mcp
   validate             Check all projects for issues (deps, placeholders)
+  status               Show platform and project health overview
   add-stack <name>     Create a new stack skeleton [--community]
   list-stacks          Show all available stacks
   list-projects        Show registered projects and their stacks

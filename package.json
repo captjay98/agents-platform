@@ -11,5 +11,8 @@
     "sync": "bun sync.mjs --all",
     "sync:dry": "bun sync.mjs --all --dry-run"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "dependencies": {
+    "@clack/prompts": "^1.2.0"
+  }
 }

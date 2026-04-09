@@ -22,6 +22,57 @@ agents-platform (central hub)
 
 Each project declares its stacks in `profile.toml`. Sync delivers only the relevant skills. A Laravel project gets Laravel skills. A TanStack project gets TanStack skills. No pollution.
 
+## Before / After
+
+Without skills, an AI agent produces generic code:
+
+```typescript
+// ❌ Generic — agent doesn't know your architecture
+app.post('/api/orders', async (req, res) => {
+  const order = await db.query('INSERT INTO orders ...')
+  res.json(order)
+})
+```
+
+With `tanstack-four-layer-arch` + `error-handling` skills loaded:
+
+```typescript
+// ✅ Project-aware — agent follows your four-layer architecture
+export const createOrderFn = createServerFn({ method: 'POST' })
+  .inputValidator(createOrderSchema)
+  .handler(async ({ data }) => {
+    const { withErrorBoundary } = await import('~/features/shared/utils/error-boundary.server')
+    return withErrorBoundary('orders.create', 'orders', async () => {
+      const { requireAuth } = await import('~/features/shared/auth/session/auth-middleware.server')
+      const session = await requireAuth()
+      const { createOrderApplication } = await import('./application.server')
+      return await createOrderApplication(session.user.id, data)
+    })
+  })
+```
+
+Same for Laravel — without skills vs with `laravel-api-conventions`:
+
+```php
+// ❌ Generic
+Route::post('/orders', function (Request $request) {
+    $order = Order::create($request->all());
+    return response()->json($order);
+});
+
+// ✅ Project-aware — thin controller, service layer, ApiResponseTrait
+class OrderController extends Controller
+{
+    use ApiResponseTrait;
+
+    public function store(CreateOrderRequest $request, OrderService $service): JsonResponse
+    {
+        $order = $service->createOrder($request->validated());
+        return $this->createdResponse(new OrderResource($order), 'Order created');
+    }
+}
+```
+
 ## Quick Start
 
 ```bash
@@ -203,6 +254,65 @@ agents-platform add-stack prisma
 ```
 ~/.kiro/skills/brainstorming   → ~/.agents/skills/brainstorming → agents-platform/global/...
 ~/.claude/skills/brainstorming → ~/.agents/skills/brainstorming → agents-platform/global/...
+```
+
+## For AI Agents
+
+If you're an AI agent helping a user set up agents-platform for a new project, follow this procedure:
+
+### 1. Detect the tech stack
+
+Scan the project root for:
+- `package.json` → check dependencies for `next`, `@tanstack/react-start`, `@nestjs/core`, `react`
+- `composer.json` → check for `laravel/framework`
+- `pubspec.yaml` → Flutter project
+- `wrangler.toml` → Cloudflare Workers deployment
+
+### 2. Map dependencies to stacks
+
+| If you find... | Add stack |
+|---|---|
+| `@tanstack/react-start` | `tanstack-fullstack` |
+| `@tanstack/react-router` (no start) | `tanstack-frontend` |
+| `next` | `nextjs` |
+| `@nestjs/core` | `nestjs` |
+| `laravel/framework` | `laravel-api` |
+| Flutter `pubspec.yaml` | `flutter` |
+| `wrangler.toml` | `cloudflare` |
+| `tailwindcss` | `tailwind` |
+| `@sentry/*` or `sentry/*` | `sentry` |
+| `better-auth` | `better-auth` |
+| `kysely` | `neon-kysely` |
+| `typeorm` | `typeorm` |
+| `bullmq` or `@nestjs/bullmq` | `bullmq` |
+| `@paystack/*` or paystack integration | `payments-laravel` / `payments-typescript` / `payments-nestjs` (match framework) |
+
+### 3. Generate profile.toml
+
+```toml
+[project]
+name = "<project-name>"
+
+[toolchains]
+enabled = ["kiro", "claude"]
+
+stacks = ["<detected-stacks>"]
+```
+
+### 4. Run setup
+
+```bash
+cd /path/to/agents-platform
+agents-platform init /path/to/project
+# Then edit .agents/profile.toml with detected stacks
+agents-platform sync --all
+cd /path/to/project && bun .agents/scripts/build.mjs
+```
+
+### 5. Verify
+
+```bash
+ls /path/to/project/.agents/skills/  # Should show skills matching declared stacks
 ```
 
 ## Testing
