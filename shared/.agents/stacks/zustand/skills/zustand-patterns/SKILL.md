@@ -154,10 +154,9 @@ export const useOrderStore = create<OrderStore>((set) => ({
 const { user } = useAuthStore.getState()
 
 // Subscribe to changes
-const unsub = useAuthStore.subscribe(
-  (state) => state.user,
-  (user) => console.log('User changed:', user),
-)
+const unsub = useAuthStore.subscribe((state) => {
+  console.log('Auth changed:', state.user)
+})
 unsub() // cleanup
 ```
 

@@ -42,7 +42,7 @@ After copying scaffold:
 2. Write `guide-header.md` with critical patterns
 3. Customize `memory/project-memory.md` with institutional knowledge
 4. Update `includes/shared/delegation-pattern.md` with project personas
-5. Run `bun scripts/agents/build.mjs` to generate `AGENTS.md`
+5. Run `bun .agents/scripts/build.mjs` to generate `AGENTS.md`
 
 ## Quality Levels
 

@@ -38,16 +38,7 @@ export default defineConfig({
 
 ## Key v4 Changes from v3 (CRITICAL)
 
-| v3 | v4 |
-|----|-----|
-| `tailwind.config.js` | `@theme {}` in CSS |
-| `@tailwind base/components/utilities` | `@import "tailwindcss"` |
-| `content: [...]` | Auto-detected from source files |
-| `theme.extend.colors` | `--color-*` CSS variables |
-| `bg-opacity-50` | `bg-black/50` |
-| `text-opacity-75` | `text-black/75` |
-| `ring-offset-*` | Removed (use `outline-offset-*`) |
-| `decoration-slice` | `box-decoration-slice` |
+> For v3 → v4 migration details and renamed utilities, see the tailwind-migration skill.
 
 ## Configuration (HIGH)
 

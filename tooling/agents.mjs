@@ -20,10 +20,14 @@ if (!command || !map[command]) {
   process.exit(1)
 }
 
-const result = spawnSync(BUN, [path.join('scripts', 'agents', map[command]), ...args], {
-  cwd: ROOT,
-  env: process.env,
-  stdio: 'inherit',
-})
+const result = spawnSync(
+  BUN,
+  [path.join('.agents', 'scripts', map[command]), ...args],
+  {
+    cwd: ROOT,
+    env: process.env,
+    stdio: 'inherit',
+  },
+)
 
 process.exit(result.status ?? 0)

@@ -39,7 +39,6 @@ function generateRootAgentsMd(canonical, enabledToolchains) {
 function collectGeneratedFiles() {
   const targets = [
     'AGENTS.md',
-    '.mcp.json',
     '.claude/agents',
     '.claude/commands',
     '.claude/skills',
@@ -56,7 +55,6 @@ function collectGeneratedFiles() {
     '.kiro/steering',
     '.kiro/hooks',
     '.kiro/settings/hooks.json',
-    '.kiro/settings/mcp.json',
     '.kiro/README.md',
     '.factory/droids',
     '.factory/commands',
@@ -121,7 +119,8 @@ function main() {
     }
   }
 
-  if (canonical.mcpServers) {
+  const hasDefinedServers = canonical.mcpServers?.servers && Object.keys(canonical.mcpServers.servers).length > 0
+  if (hasDefinedServers) {
     const shouldRenderMcp =
       enabledSet.has('kiro') ||
       enabledSet.has('gemini') ||

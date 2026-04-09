@@ -5,11 +5,15 @@ const ROOT = process.cwd()
 const BUN = process.execPath
 
 function run(scriptPath) {
-  const result = spawnSync(BUN, [path.join('scripts', 'agents', scriptPath)], {
+  const result = spawnSync(
+    BUN,
+    [path.join('.agents', 'scripts', scriptPath)],
+    {
     cwd: ROOT,
     env: process.env,
     stdio: 'inherit',
-  })
+    },
+  )
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 

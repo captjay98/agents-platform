@@ -197,7 +197,7 @@ export const GeneratedHooks = async ({ directory, worktree }) => {
 
   const config = {
     $schema: 'https://opencode.ai/config.json',
-    instructions: ['AGENTS.md', '.opencode/RULES.md'],
+    instructions: ['AGENTS.md'],
   }
 
   if (canonical.mcpServers) {

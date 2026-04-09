@@ -157,7 +157,8 @@ class SecurityHeaders
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'DENY');
-        $response->headers->set('X-XSS-Protection', '1; mode=block');
+        // X-XSS-Protection is deprecated in modern browsers. Use Content-Security-Policy instead.
+        $response->headers->set('Content-Security-Policy', "default-src 'self'");
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         return $response;
@@ -167,7 +168,7 @@ class SecurityHeaders
 
 ## Rules
 
-- Always use `$request->validated()` — never `$request->all()` or `$request->input()`
+- Always use `$request->validated()` for mass assignment — never `$request->all()`. Individual field access with `$request->input()` is fine for non-mass-assignment reads.
 - Always rate-limit auth endpoints separately from API endpoints
 - Never store files in `public/` — use `private` disk with signed URLs
 - Never log passwords, tokens, or full email addresses

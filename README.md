@@ -71,11 +71,14 @@ agents-platform/
 ├── global/                    # Tool-level skills (symlinked to ~/.agents/skills/)
 │   └── .agents/
 │       └── skills/            # 26 workflow, quality, and orchestration skills
+├── shared/                    # Stack-based content synced to projects
 │   └── .agents/
-│       ├── skills/            # Universal skills
+│       ├── skills/            # 18 shared skills (all projects)
 │       ├── rules/             # Universal rules
-│       └── stacks/            # 27 technology stacks
+│       ├── stacks/            # 30 technology stacks with scoped skills
+│       └── skills-manifest.json  # Tracks 76 upstream skill sources
 ├── sync.mjs                   # Sync engine
+├── update-skills.mjs          # Pull latest from upstream skill repos
 ├── bootstrap.mjs              # Scaffold + sync for new projects
 └── projects.json              # Registered project paths
 ```
@@ -114,7 +117,7 @@ stacks = ["laravel-api", "bouncer", "neon-eloquent"]
 
 Stack dependencies are validated at sync time — if `bouncer` requires `laravel-api` and it's missing, you get a warning.
 
-Run `agents-platform list-stacks` to see all 27 stacks with their dependencies.
+Run `agents-platform list-stacks` to see all 30 stacks with their dependencies.
 
 ## Renderers
 
@@ -128,14 +131,12 @@ agents-platform list-renderers   # Show all renderers with capabilities
 
 ## Managed Projects
 
-| Project | Description | Stacks |
-|---------|-------------|--------|
-| LivestockAI | Livestock management | TanStack Start, Kysely, Neon, CF Workers |
-| ProjAvi | Project management | Laravel, TanStack, Flutter, Neon, CF |
-| DeliveryNexus | Delivery logistics | Laravel, TanStack Start, Flutter, Neon, CF |
-| Eweko | Agriculture/farming | TanStack Start, Kysely, Neon, CF Workers |
-
-All projects are at 10/10 quality — full personas, runbook commands, decision-guided skills, institutional memory, and structured delegation.
+| Project | Stack | Stacks | Skills (local) |
+|---------|-------|--------|----------------|
+| LivestockAI | TanStack Start + Cloudflare Workers + Better Auth + Kysely/Neon | 9 | 71 (13 local) |
+| Projavi | Laravel API + TanStack frontend + Flutter mobile + Cloudflare | 14 | 99 (6 local) |
+| DeliveryNexus | Laravel API + TanStack frontend + Flutter mobile + Multi-tenant | 16 | 116 (21 local) |
+| Eweko | Next.js + NestJS + TypeORM + BullMQ + Cloudflare | 10 | 58 (5 local) |
 
 ## Adding a New Project
 
@@ -157,6 +158,38 @@ agents-platform add-stack prisma
 ```
 
 Creates `shared/.agents/stacks/prisma/` with `skills/`, `rules/`, and `stack.toml`. Add content, then declare it in project `profile.toml` files.
+
+## Skills
+
+**147 total** — 76 upstream (auto-updatable) + 71 custom (hand-written).
+
+| Scope | Count | Description |
+|-------|-------|-------------|
+| Shared | 18 | All projects get these (7 custom + 11 upstream) |
+| Stack-scoped | 129 | Projects opt-in via `profile.toml` stacks |
+
+### Upstream Sources (76 skills from 12 repos)
+
+Tracked in `shared/.agents/skills-manifest.json`. Update all with:
+
+```bash
+bun update-skills.mjs --all    # Pull latest from all upstream repos
+bun sync.mjs --all             # Push to all projects
+```
+
+Key sources: `getsentry/sentry-for-ai`, `iSerter/laravel-claude-agents`, `cloudflare/skills`, `vercel-labs/next-skills`, `tanstack/agent-skills`, `anthropics/skills`, `sergiodxa/agent-skills`, `ibelick/ui-skills`, `neondatabase/agent-skills`.
+
+### Custom Skills (71)
+
+Stack-scoped skills written for your conventions: TanStack four-layer architecture, Laravel API conventions, Flutter conventions, payment provider integrations (Paystack, Nomba, Squad), Kysely/TypeORM patterns, Better Auth setup, and more.
+
+### Payment Stacks (split by framework)
+
+| Stack | Skills | Projects |
+|-------|--------|----------|
+| `payments-laravel` | paystack-laravel, nomba-laravel, squadco-laravel | Projavi, DeliveryNexus |
+| `payments-typescript` | nomba-typescript, squadco-typescript | LivestockAI |
+| `payments-nestjs` | paystack-nestjs | Eweko |
 
 ## Global Skills
 

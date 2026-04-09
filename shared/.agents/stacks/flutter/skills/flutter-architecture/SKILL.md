@@ -3,6 +3,8 @@ name: flutter-architecture
 description: Feature-first project structure, widget decomposition, and separation of concerns for Flutter apps. Use when starting a new feature or organizing code.
 ---
 
+
+> This skill provides deep-dive patterns. For cross-project conventions and setup, see flutter-conventions.
 # Flutter Architecture
 
 ## Project Structure (CRITICAL)

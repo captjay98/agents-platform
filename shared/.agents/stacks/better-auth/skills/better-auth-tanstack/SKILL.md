@@ -1,195 +1,156 @@
 ---
 name: better-auth-tanstack
-description: Integrating Better Auth with TanStack Start and TanStack Router — server functions, route guards, and session management. Use when building auth in TanStack Start apps.
+description: Better Auth integration with TanStack Start — async getAuth() factory, tanstackStartCookies plugin, Cloudflare Workers env resolution, access control, and session middleware. Use when implementing authentication.
 ---
 
-# Better Auth with TanStack
+# Better Auth + TanStack Start
 
-Better Auth integration patterns for TanStack Start (server functions) and TanStack Router (route guards).
+Async `getAuth()` factory pattern for Cloudflare Workers compatibility.
 
-## Server Setup (CRITICAL)
+## Auth Config (CRITICAL)
+
+`getAuth()` is async because it resolves env vars from Cloudflare Workers bindings or `process.env`:
 
 ```typescript
-// app/lib/auth.ts
+// features/shared/auth/config.ts
 import { betterAuth } from 'better-auth'
-import { db } from './db'
+import { admin, emailOTP, phoneNumber } from 'better-auth/plugins'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
+import { ac, roles } from './permissions'
 
-export const auth = betterAuth({
-  database: { type: 'postgres', db },
-  emailAndPassword: { enabled: true },
-  session: {
-    expiresIn: 60 * 60 * 24 * 7,
-    updateAge: 60 * 60 * 24,
-    cookieCache: { enabled: true, maxAge: 60 * 5 },
-  },
+let envCache: Record<string, string | undefined> | null = null
+
+async function getEnv() {
+  if (envCache) return envCache
+  try {
+    // Cloudflare Workers: use bindings
+    const { env } = await import('cloudflare:workers')
+    envCache = {
+      DATABASE_URL: (env as any).DATABASE_URL,
+      BETTER_AUTH_SECRET: (env as any).BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: (env as any).BETTER_AUTH_URL,
+    }
+  } catch {
+    // Node.js/Bun fallback
+    envCache = {
+      DATABASE_URL: process.env.DATABASE_URL,
+      BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
+    }
+  }
+  return envCache
+}
+
+let authInstance: ReturnType<typeof betterAuth> | null = null
+
+export async function getAuth() {
+  if (authInstance) return authInstance
+  const env = await getEnv()
+
+  authInstance = betterAuth({
+    database: { /* Kysely/Postgres pool */ },
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
+    plugins: [
+      tanstackStartCookies(),  // Cookie handling for TanStack Start
+      admin({ ac, roles }),
+      emailOTP({ /* config */ }),
+      phoneNumber({ /* config */ }),
+    ],
+  })
+  return authInstance
+}
+```
+
+## Permissions (CRITICAL)
+
+Access control via Better Auth's `createAccessControl`:
+
+```typescript
+// features/shared/auth/permissions.ts
+import { createAccessControl } from 'better-auth/plugins/access'
+import { defaultStatements } from 'better-auth/plugins/admin/access'
+
+export const statement = {
+  ...defaultStatements,
+  farm: ['view', 'edit', 'delete', 'manage-access'],
+  batch: ['view', 'create', 'edit', 'delete'],
+  report: ['view', 'export'],
+} as const
+
+export const ac = createAccessControl(statement)
+
+export const roles = {
+  admin: ac.newRole({ farm: ['view', 'edit', 'delete', 'manage-access'], batch: ['view', 'create', 'edit', 'delete'] }),
+  farmer: ac.newRole({ farm: ['view', 'edit'], batch: ['view', 'create', 'edit'] }),
+  worker: ac.newRole({ farm: ['view'], batch: ['view'] }),
+}
+```
+
+## Auth Middleware (CRITICAL)
+
+`requireAuth()` for server functions — always dynamically imported:
+
+```typescript
+// features/shared/auth/session/auth-middleware.server.ts
+export async function requireAuth(): Promise<{ user: User }> {
+  const auth = await getAuth()
+  const headers = getRequestHeaders()
+  const session = await auth.api.getSession({ headers })
+  if (!session?.user) throw new AppError('UNAUTHORIZED')
+  return { user: normalizeAuthUser(session.user) }
+}
+
+// Usage in .functions.ts — always dynamic import
+export const getProfileFn = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    const { withErrorBoundary } = await import('~/features/shared/utils/error-boundary.server')
+    return withErrorBoundary('profile.get', 'profile', async () => {
+      const { requireAuth } = await import('~/features/shared/auth/session/auth-middleware.server')
+      const session = await requireAuth()
+      // ...
+    })
+  })
+```
+
+## Auth API Route (HIGH)
+
+Manual routing in `server.ts` (not `createAPIFileRoute`):
+
+```typescript
+// server.ts
+export default createStartHandler({
+  createRouter,
+})(async ({ request }) => {
+  const url = new URL(request.url)
+  if (url.pathname.startsWith('/api/auth')) {
+    const auth = await getAuth()
+    return auth.handler(request)
+  }
 })
 ```
 
-## API Route (CRITICAL)
+## Client Auth (HIGH)
 
 ```typescript
-// app/routes/api/auth/$.ts
-import { auth } from '~/lib/auth'
-import { createAPIFileRoute } from '@tanstack/react-start/api'
-
-export const APIRoute = createAPIFileRoute('/api/auth/$')({
-  GET: ({ request }) => auth.handler(request),
-  POST: ({ request }) => auth.handler(request),
-})
-```
-
-## Auth Client (CRITICAL)
-
-```typescript
-// app/lib/auth-client.ts
-import { createAuthClient } from 'better-auth/client'
+// features/shared/auth/client.ts
+import { createAuthClient } from 'better-auth/react'
 
 export const authClient = createAuthClient({
-  baseURL: import.meta.env.VITE_APP_URL ?? 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_APP_URL,
 })
 
-export const { signIn, signOut, signUp, useSession } = authClient
-```
-
-## Server Middleware (HIGH)
-
-```typescript
-// app/features/auth/middleware.ts
-import { auth } from '~/lib/auth'
-import { getWebRequest } from '@tanstack/react-start/server'
-
-export async function requireAuth() {
-  const request = getWebRequest()
-  const session = await auth.api.getSession({ headers: request.headers })
-
-  if (!session) {
-    throw new Error('UNAUTHORIZED')
-  }
-
-  return session
-}
-
-export async function getOptionalSession() {
-  const request = getWebRequest()
-  return auth.api.getSession({ headers: request.headers })
-}
-```
-
-## Server Functions (HIGH)
-
-```typescript
-// app/features/posts/server.ts
-import { createServerFn } from '@tanstack/react-start'
-import { requireAuth } from '~/features/auth/middleware'
-
-export const getMyPostsFn = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const session = await requireAuth()
-    return getPostsByUser(session.user.id)
-  })
-
-export const createPostFn = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ title: z.string(), content: z.string() }))
-  .handler(async ({ data }) => {
-    const session = await requireAuth()
-    return createPost({ ...data, userId: session.user.id })
-  })
-```
-
-## Route Guards (HIGH)
-
-```typescript
-// app/routes/_auth.tsx — protects all routes under _auth/
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router'
-import { getOptionalSession } from '~/features/auth/middleware'
-
-export const Route = createFileRoute('/_auth')({
-  beforeLoad: async ({ location }) => {
-    const session = await getOptionalSession()
-    if (!session) {
-      throw redirect({
-        to: '/login',
-        search: { redirect: location.href },
-      })
-    }
-    return { session }
-  },
-  component: () => <Outlet />,
-})
-
-// Access session in child routes
-function DashboardPage() {
-  const { session } = Route.useRouteContext()
-  return <div>Welcome, {session.user.name}</div>
-}
-```
-
-## Login Page (HIGH)
-
-```typescript
-// app/routes/login.tsx
-export const Route = createFileRoute('/login')({
-  validateSearch: z.object({ redirect: z.string().optional() }),
-  component: LoginPage,
-})
-
-function LoginPage() {
-  const { redirect: redirectTo } = Route.useSearch()
-  const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-
-    const { error } = await signIn.email({
-      email: form.get('email') as string,
-      password: form.get('password') as string,
-    })
-
-    if (error) {
-      setError(error.message)
-      return
-    }
-
-    navigate({ to: redirectTo ?? '/dashboard' })
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input name="email" type="email" required />
-      <input name="password" type="password" required />
-      {error && <p className="text-red-500">{error}</p>}
-      <button type="submit">Sign In</button>
-    </form>
-  )
-}
-```
-
-## Session in Components (MEDIUM)
-
-```typescript
-// Read session on client
-function UserMenu() {
-  const { data: session, isPending } = useSession()
-
-  if (isPending) return <Spinner />
-  if (!session) return null
-
-  return (
-    <div>
-      <span>{session.user.name}</span>
-      <button onClick={() => signOut({ fetchOptions: { onSuccess: () => navigate({ to: '/login' }) } })}>
-        Sign Out
-      </button>
-    </div>
-  )
-}
+// Usage in components
+const { data: session } = authClient.useSession()
+await authClient.signIn.email({ email, password })
+await authClient.signOut()
 ```
 
 ## Rules
 
-- Always call `requireAuth()` at the top of every server function that accesses user data
-- Always use `beforeLoad` in route files for auth guards — never check auth inside components
-- Always pass `redirect` search param to login page so users return to their destination
-- Never expose session data in loader return values — use `routeContext` instead
+- Always use `getAuth()` async factory — never import auth instance directly
+- `tanstackStartCookies()` plugin is required for cookie-based sessions in TanStack Start
+- Cloudflare Workers env resolution tries `cloudflare:workers` first, falls back to `process.env`
+- `requireAuth()` is always dynamically imported in `.functions.ts`
+- Permissions defined in `permissions.ts` — single source of truth for roles and access control
+- Auth API handled via manual routing in `server.ts`, not file-based API routes

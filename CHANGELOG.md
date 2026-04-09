@@ -27,11 +27,11 @@ Initial release — stack-based AI agent configuration system.
 - **Skills**: Decision Guide sections (use when / don't use when / decision tree / failure modes)
 - **Rules**: Frontmatter with trigger and globs fields
 
-### Managed Projects (all 10/10 quality)
+### Managed Projects
 
-| Project | Personas | Commands | Skills | Rules |
-|---------|----------|----------|--------|-------|
-| LivestockAI | 11 | 21 | 54 | 18 |
-| ProjAvi | 10 | 26 | 78 | 29 |
-| DeliveryNexus | 12 | 26 | 60 | 24 |
-| Eweko | 9 | 21 | 40 | 15 |
+| Project | Stacks | Skills (local) |
+|---------|--------|----------------|
+| LivestockAI | 9 | 71 (13 local) |
+| Projavi | 14 | 99 (6 local) |
+| DeliveryNexus | 16 | 116 (21 local) |
+| Eweko | 10 | 58 (5 local) |

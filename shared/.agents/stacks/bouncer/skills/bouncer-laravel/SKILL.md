@@ -3,6 +3,8 @@ name: bouncer-laravel
 description: Fine-grained authorization with silber/bouncer for Laravel. Use when defining abilities, roles, and ownership-based access control.
 ---
 
+> **Choose one:** Use Bouncer OR spatie/laravel-permission — not both. Bouncer is preferred when you need ownership-based abilities (`toOwn()`); Spatie is preferred for simpler role/permission CRUD.
+
 # Bouncer Laravel
 
 ## Installation

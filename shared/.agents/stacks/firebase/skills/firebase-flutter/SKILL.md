@@ -146,7 +146,8 @@ class FcmService {
 ## Riverpod provider
 
 ```dart
-final fcmServiceProvider = Provider<FcmService>((ref) => FcmService());
+@riverpod
+FcmService fcmService(ref) => FcmService();
 
 // In app initialization
 ref.read(fcmServiceProvider).initialize();

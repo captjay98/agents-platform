@@ -112,7 +112,7 @@ class PostRepository {
 
 ```dart
 @riverpod
-Stream<ConnectivityResult> connectivity(ConnectivityRef ref) {
+Stream<List<ConnectivityResult>> connectivity(ConnectivityRef ref) {
   return Connectivity().onConnectivityChanged;
 }
 
@@ -121,14 +121,14 @@ class ConnectivityService extends _$ConnectivityService {
   @override
   bool build() {
     ref.listen(connectivityProvider, (_, next) {
-      state = next.valueOrNull != ConnectivityResult.none;
+      state = next.valueOrNull?.contains(ConnectivityResult.none) == false;
     });
     return true;  // Assume online initially
   }
 
   Future<bool> get isOnline async {
     final result = await Connectivity().checkConnectivity();
-    return result != ConnectivityResult.none;
+    return !result.contains(ConnectivityResult.none);
   }
 }
 

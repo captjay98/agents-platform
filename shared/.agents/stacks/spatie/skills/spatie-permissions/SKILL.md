@@ -3,6 +3,8 @@ name: spatie-permissions
 description: Role and permission management with spatie/laravel-permission. Use when assigning roles, checking permissions, protecting routes, or seeding roles/permissions.
 ---
 
+> **Choose one:** Use spatie/laravel-permission OR silber/bouncer — not both. Spatie is preferred for simpler role/permission CRUD; Bouncer is preferred when you need ownership-based abilities.
+
 # Spatie Laravel Permission
 
 ## Installation

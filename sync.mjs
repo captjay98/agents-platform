@@ -49,13 +49,16 @@ function collectFiles(dir, base = dir) {
   return entries
 }
 
-function syncFiles(srcDir, dstDir, files, { dryRun = false, label = '', skipExisting = false } = {}) {
+function syncFiles(srcDir, dstDir, files, { dryRun = false, label = '', skipExisting = false, trackedFiles = null } = {}) {
   let changed = 0
   for (const rel of files) {
     const src = path.join(srcDir, rel)
     const dst = path.join(dstDir, rel)
 
-    if (skipExisting && fs.existsSync(dst)) continue
+    if (skipExisting && fs.existsSync(dst)) {
+      if (trackedFiles) trackedFiles.add(rel)
+      continue
+    }
 
     const srcContent = fs.readFileSync(src)
     let needsWrite = true
@@ -73,8 +76,69 @@ function syncFiles(srcDir, dstDir, files, { dryRun = false, label = '', skipExis
       }
       changed++
     }
+    if (trackedFiles) trackedFiles.add(rel)
   }
   return changed
+}
+
+function removeStaleFiles(projectPath, previousFiles, currentFiles, { dryRun = false } = {}) {
+  const agentsDir = path.join(projectPath, '.agents')
+  const stale = previousFiles.filter(f => !currentFiles.has(f))
+  let removed = 0
+  for (const rel of stale) {
+    const full = path.join(agentsDir, rel)
+    if (!fs.existsSync(full)) continue
+    if (dryRun) {
+      console.log(`  would remove: ${rel}`)
+    } else {
+      fs.unlinkSync(full)
+      console.log(`  removed: ${rel}`)
+    }
+    removed++
+    // Clean empty parent dirs up to .agents/
+    let dir = path.dirname(full)
+    while (dir !== agentsDir && fs.existsSync(dir) && fs.readdirSync(dir).length === 0) {
+      fs.rmdirSync(dir)
+      dir = path.dirname(dir)
+    }
+  }
+  return removed
+}
+
+function lockPayload(projectPath, { toolingOnly = false, syncedFiles = [] } = {}) {
+  return {
+    version: 2,
+    source: 'agents-platform',
+    scripts_dir: '.agents/scripts',
+    tooling_only: Boolean(toolingOnly),
+    stacks: readProjectStacks(projectPath),
+    synced_files: syncedFiles.sort(),
+  }
+}
+
+function readLockFile(projectPath) {
+  const lockPath = path.join(projectPath, '.agents', 'lock.json')
+  if (!fs.existsSync(lockPath)) return null
+  try { return JSON.parse(fs.readFileSync(lockPath, 'utf8')) } catch { return null }
+}
+
+function writeLockFile(projectPath, { dryRun = false, toolingOnly = false, syncedFiles = [] } = {}) {
+  const lockPath = path.join(projectPath, '.agents', 'lock.json')
+  const content = JSON.stringify(lockPayload(projectPath, { toolingOnly, syncedFiles }), null, 2) + '\n'
+
+  if (fs.existsSync(lockPath) && fs.readFileSync(lockPath, 'utf8') === content) {
+    return 0
+  }
+
+  if (dryRun) {
+    console.log('  would write [lock]: lock.json')
+    return 1
+  }
+
+  fs.mkdirSync(path.dirname(lockPath), { recursive: true })
+  fs.writeFileSync(lockPath, content)
+  console.log('  updated [lock]: lock.json')
+  return 1
 }
 
 export function readProjectStacks(projectPath) {
@@ -156,6 +220,8 @@ export function syncTo(projectPath, { dryRun = false, toolingOnly = false } = {}
     return false
   }
 
+  const trackedFiles = new Set()
+
   const toolingFiles = collectFiles(TOOLING_DIR)
   const toolingTarget = path.join(projectPath, '.agents', 'scripts')
   const toolingChanged = syncFiles(TOOLING_DIR, toolingTarget, toolingFiles, { dryRun })
@@ -169,14 +235,14 @@ export function syncTo(projectPath, { dryRun = false, toolingOnly = false } = {}
     if (fs.existsSync(scaffoldDir)) {
       const scaffoldFiles = collectFiles(scaffoldDir)
       if (scaffoldFiles.length) {
-        sharedChanged += syncFiles(scaffoldDir, agentsTarget, scaffoldFiles, { dryRun, label: ' [scaffold]', skipExisting: true })
+        sharedChanged += syncFiles(scaffoldDir, agentsTarget, scaffoldFiles, { dryRun, label: ' [scaffold]', skipExisting: true, trackedFiles })
       }
     }
 
     // Shared universal (skip stacks/, skipExisting — project wins)
     const sharedFiles = collectFiles(SHARED_DIR).filter(f => !f.startsWith('stacks/') && !f.startsWith('stacks\\'))
     if (sharedFiles.length) {
-      sharedChanged += syncFiles(SHARED_DIR, agentsTarget, sharedFiles, { dryRun, label: ' [shared]', skipExisting: true })
+      sharedChanged += syncFiles(SHARED_DIR, agentsTarget, sharedFiles, { dryRun, label: ' [shared]', skipExisting: true, trackedFiles })
     }
 
     // Stacks (no skipExisting — platform canonical)
@@ -203,12 +269,21 @@ export function syncTo(projectPath, { dryRun = false, toolingOnly = false } = {}
       if (!stackDir) continue
       const stackFiles = collectFiles(stackDir).filter(f => f !== 'stack.toml')
       if (stackFiles.length) {
-        sharedChanged += syncFiles(stackDir, agentsTarget, stackFiles, { dryRun, label: ` [stack:${stack}]` })
+        sharedChanged += syncFiles(stackDir, agentsTarget, stackFiles, { dryRun, label: ` [stack:${stack}]`, trackedFiles })
       }
+    }
+
+    // Remove stale files from previous sync
+    const prevLock = readLockFile(projectPath)
+    const previousFiles = prevLock?.synced_files ?? []
+    if (previousFiles.length) {
+      sharedChanged += removeStaleFiles(projectPath, previousFiles, trackedFiles, { dryRun })
     }
   }
 
-  const total = toolingChanged + sharedChanged
+  const syncedFiles = [...trackedFiles]
+  const lockChanged = writeLockFile(projectPath, { dryRun, toolingOnly, syncedFiles })
+  const total = toolingChanged + sharedChanged + lockChanged
   if (total === 0) console.log('  already up to date')
   return true
 }

@@ -26,64 +26,11 @@ app/
 
 ## Controller Pattern (CRITICAL)
 
-Controllers should be thin — validate, delegate, respond:
-
-```php
-class PostController extends Controller
-{
-    public function store(StorePostRequest $request, CreatePost $action): PostResource
-    {
-        $post = $action->handle($request->validated(), $request->user());
-        return (new PostResource($post))->response()->setStatusCode(201);
-    }
-
-    public function index(IndexPostRequest $request): PostCollection
-    {
-        $posts = Post::query()
-            ->with(['user:id,name', 'tags'])
-            ->withCount('comments')
-            ->filter($request->validated())
-            ->paginate($request->integer('per_page', 15));
-
-        return new PostCollection($posts);
-    }
-
-    public function destroy(Post $post): Response
-    {
-        $this->authorize('delete', $post);
-        $post->delete();
-        return response()->noContent();
-    }
-}
-```
+See laravel-api-conventions for the Controller → Service → Model pattern.
 
 ## Action Pattern (HIGH)
 
-One class, one operation. Keeps controllers thin and logic testable:
-
-```php
-// app/Actions/Posts/CreatePost.php
-class CreatePost
-{
-    public function handle(array $data, User $author): Post
-    {
-        $post = $author->posts()->create([
-            'title' => $data['title'],
-            'content' => $data['content'],
-            'slug' => Str::slug($data['title']),
-            'status' => PostStatus::Draft,
-        ]);
-
-        if (!empty($data['tags'])) {
-            $post->tags()->sync($data['tags']);
-        }
-
-        event(new PostCreated($post));
-
-        return $post->load('tags');
-    }
-}
-```
+See laravel-actions for the single-responsibility action pattern.
 
 ## Service Pattern (HIGH)
 
@@ -119,7 +66,7 @@ class PublishingService
 
 ```php
 // routes/api.php
-Route::prefix('v1')->middleware('api')->group(function () {
+Route::prefix('api')->middleware('api')->group(function () {
     // Public
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/register', [AuthController::class, 'register']);

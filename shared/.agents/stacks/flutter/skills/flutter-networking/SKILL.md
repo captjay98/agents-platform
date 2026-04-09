@@ -3,6 +3,8 @@ name: flutter-networking
 description: HTTP networking with Dio — interceptors, authentication, error handling, and request/response patterns for Flutter apps.
 ---
 
+
+> This skill provides deep-dive patterns. For cross-project conventions and setup, see flutter-conventions.
 # Flutter Networking
 
 Dio-based HTTP client with interceptors, auth, and typed error handling.

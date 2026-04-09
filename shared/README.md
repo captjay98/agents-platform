@@ -6,8 +6,8 @@ Stack-based content synced to projects based on their `profile.toml` stacks conf
 
 ```
 shared/.agents/
-├── skills/           # 7 universal skills (error-handling, feature-structure, i18n-patterns, etc.)
-├── rules/            # 7 universal rules (git-safety, meaningful-names, test-what-matters, etc.)
+├── skills/           # 7 shared custom skills + 11 shared upstream skills
+├── rules/            # Universal rules (git-safety, meaningful-names, test-what-matters, etc.)
 ├── hooks/            # Canonical hooks.json (synced to all projects)
 ├── schema/           # JSON schemas for validation
 └── stacks/           # 27 technology stacks
@@ -58,7 +58,7 @@ When `node sync.mjs --all` runs:
 Projects declare stacks in `.agents/profile.toml`:
 
 ```toml
-stacks = ["nestjs", "nextjs", "cloudflare", "sentry", "payments"]
+stacks = ["nestjs", "nextjs", "cloudflare", "sentry", "payments-nestjs"]
 ```
 
 Only content from declared stacks is synced to that project.

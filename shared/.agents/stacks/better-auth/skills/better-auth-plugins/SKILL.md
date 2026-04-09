@@ -11,7 +11,6 @@ Better Auth's plugin system extends core auth with additional features.
 
 ```typescript
 import { betterAuth } from 'better-auth'
-import { github, google } from 'better-auth/social-providers'
 
 export const auth = betterAuth({
   // ...

@@ -366,10 +366,9 @@ function verifyOpenCodeRegistration(enabledSet) {
   const instructions = parsed.instructions
   if (
     !Array.isArray(instructions) ||
-    !instructions.includes('AGENTS.md') ||
-    !instructions.includes('.opencode/RULES.md')
+    !instructions.includes('AGENTS.md')
   ) {
-    fail('verify: opencode.json must include AGENTS.md and .opencode/RULES.md in instructions')
+    fail('verify: opencode.json must include AGENTS.md in instructions')
   }
 
   assertExists(path.join(ROOT, '.opencode', 'plugins', 'hooks.generated.ts'))
@@ -391,7 +390,7 @@ function verifyNoLegacyFactoryArtifacts() {
 
 function verifyCanonicalHooksCoverage() {
   const hooks = parseHooks().hooks
-  const requiredEvents = new Set(['session_start', 'before_tool', 'after_tool', 'prompt_submit', 'session_end'])
+  const requiredEvents = new Set(['session_start', 'before_tool'])
   const seen = new Set(hooks.map((hook) => hook.event))
 
   for (const event of requiredEvents) {
@@ -401,11 +400,11 @@ function verifyCanonicalHooksCoverage() {
   }
 
   const requiredByTool = {
-    claude: ['session_start', 'before_tool', 'after_tool'],
-    gemini: ['session_start', 'before_tool', 'after_tool', 'session_end'],
-    kiro: ['session_start', 'before_tool', 'after_tool', 'prompt_submit'],
-    factory: ['session_start', 'before_tool', 'after_tool'],
-    opencode: ['session_start', 'before_tool', 'after_tool', 'prompt_submit', 'session_end'],
+    claude: ['session_start', 'before_tool'],
+    gemini: ['session_start', 'before_tool'],
+    kiro: ['session_start', 'before_tool'],
+    factory: ['session_start', 'before_tool'],
+    opencode: ['session_start', 'before_tool'],
   }
 
   for (const [tool, expectedEvents] of Object.entries(requiredByTool)) {

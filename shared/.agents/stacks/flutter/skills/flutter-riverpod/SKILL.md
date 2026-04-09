@@ -3,6 +3,8 @@ name: flutter-riverpod
 description: State management with Riverpod 2.x — providers, async state, notifiers, and dependency injection. Use when managing state in Flutter apps.
 ---
 
+
+> This skill provides deep-dive patterns. For cross-project conventions and setup, see flutter-conventions.
 # Flutter Riverpod
 
 Riverpod 2.x with code generation (`riverpod_annotation`).
@@ -32,17 +34,17 @@ void main() {
 ```dart
 // Simple computed value
 @riverpod
-String greeting(GreetingRef ref) => 'Hello, World!';
+String greeting(Ref ref) => 'Hello, World!';
 
 // Async data (Future)
 @riverpod
-Future<List<Post>> posts(PostsRef ref) {
+Future<List<Post>> posts(Ref ref) {
   return ref.watch(postRepositoryProvider).getPosts();
 }
 
 // Stream
 @riverpod
-Stream<User?> authState(AuthStateRef ref) {
+Stream<User?> authState(Ref ref) {
   return ref.watch(authServiceProvider).userStream;
 }
 
@@ -119,19 +121,19 @@ class _PostFormScreenState extends ConsumerState<PostFormScreen> {
 ```dart
 // Providers depend on other providers
 @riverpod
-Dio dio(DioRef ref) {
+Dio dio(Ref ref) {
   final dio = Dio(BaseOptions(baseUrl: AppConfig.apiUrl));
   dio.interceptors.add(AuthInterceptor(ref));
   return dio;
 }
 
 @riverpod
-PostApi postApi(PostApiRef ref) {
+PostApi postApi(Ref ref) {
   return PostApi(ref.watch(dioProvider));
 }
 
 @riverpod
-PostRepository postRepository(PostRepositoryRef ref) {
+PostRepository postRepository(Ref ref) {
   return PostRepository(
     ref.watch(postApiProvider),
     ref.watch(postLocalStorageProvider),
@@ -144,7 +146,7 @@ PostRepository postRepository(PostRepositoryRef ref) {
 ```dart
 // Parameterized providers
 @riverpod
-Future<Post> post(PostRef ref, String postId) {
+Future<Post> post(Ref ref, String postId) {
   return ref.watch(postRepositoryProvider).getPost(postId);
 }
 

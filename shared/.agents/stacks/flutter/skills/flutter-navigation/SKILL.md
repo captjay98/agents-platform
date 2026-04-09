@@ -3,6 +3,8 @@ name: flutter-navigation
 description: Navigation with GoRouter — route definitions, guards, deep linking, and nested navigation for Flutter apps.
 ---
 
+
+> This skill provides deep-dive patterns. For cross-project conventions and setup, see flutter-conventions.
 # Flutter Navigation
 
 GoRouter for declarative, URL-based navigation with type safety.

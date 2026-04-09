@@ -71,7 +71,7 @@ lib/db/migrations/
 
 ```typescript
 // lib/db/migrations/2024-01-01T00:00:00-create-users.ts
-import type { Kysely } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema

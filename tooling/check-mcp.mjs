@@ -59,15 +59,6 @@ const PINNED = {
   git: 'mcp-server-git==2026.1.14',
 }
 
-const EXPECTED_SERVERS = new Set([
-  'figma',
-  'laravel-boost',
-  'git',
-  'filesystem',
-  'postgres',
-  'neon',
-])
-
 let hasError = false
 
 function fail(message) {
@@ -400,6 +391,34 @@ function setsEqual(left, right) {
   return true
 }
 
+function readCanonicalExpectedServers() {
+  const canonicalPath = path.join(ROOT, '.agents', 'mcp', 'servers.json')
+  if (!fs.existsSync(canonicalPath)) {
+    fail('check-mcp: missing canonical .agents/mcp/servers.json')
+    return null
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(fs.readFileSync(canonicalPath, 'utf8'))
+  } catch (error) {
+    fail(`check-mcp: invalid json .agents/mcp/servers.json (${error.message})`)
+    return null
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    fail('check-mcp: .agents/mcp/servers.json must be an object')
+    return null
+  }
+
+  if (!parsed.servers || typeof parsed.servers !== 'object' || Array.isArray(parsed.servers)) {
+    fail('check-mcp: .agents/mcp/servers.json must contain object key "servers"')
+    return null
+  }
+
+  return new Set(Object.keys(parsed.servers))
+}
+
 function enabledConfigs() {
   const resolution = resolveToolchains({
     includeLocalOverride: false,
@@ -425,6 +444,12 @@ function enabledConfigs() {
 }
 
 function main() {
+  const expectedServers = readCanonicalExpectedServers()
+  if (!expectedServers) {
+    process.exitCode = 1
+    return
+  }
+
   const activeConfigs = enabledConfigs()
   if (activeConfigs.length === 0) {
     process.stdout.write('agents-check-mcp: skipped (no mcp-capable toolchains enabled)\n')
@@ -454,8 +479,8 @@ function main() {
     return
   }
 
-  if (!setsEqual(referenceServers, EXPECTED_SERVERS)) {
-    const expectedNames = [...EXPECTED_SERVERS].sort().join(', ')
+  if (!setsEqual(referenceServers, expectedServers)) {
+    const expectedNames = [...expectedServers].sort().join(', ')
     const actualNames = [...referenceServers].sort().join(', ')
     fail(
       `check-mcp: server set mismatch expected=[${expectedNames}] actual=[${actualNames}]`,

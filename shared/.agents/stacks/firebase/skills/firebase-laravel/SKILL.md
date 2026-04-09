@@ -147,6 +147,8 @@ use Kreait\Firebase\Messaging\CloudMessage;
 
 class OrderShippedNotification extends Notification
 {
+    public function __construct(private Order $order) {}
+
     public function via(object $notifiable): array
     {
         return ['database', 'fcm'];  // custom channel

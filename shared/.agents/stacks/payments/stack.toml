@@ -1,5 +1,0 @@
-[stack]
-name = "payments"
-description = "Payment processing patterns (Paystack, Stripe)"
-category = "community"
-requires = []

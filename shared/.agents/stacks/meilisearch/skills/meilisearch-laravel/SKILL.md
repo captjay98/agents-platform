@@ -8,7 +8,7 @@ description: Full-text search with Meilisearch in Laravel via Laravel Scout. Use
 ## Installation
 
 ```bash
-composer require laravel/scout meilisearch/meilisearch-php http-interop/http-factory-guzzle
+composer require laravel/scout meilisearch/meilisearch-php
 php artisan vendor:publish --provider="Laravel\Scout\ScoutServiceProvider"
 ```
 
@@ -54,7 +54,7 @@ class Product extends Model
 ## Index settings (run once or in migration)
 
 ```php
-use MeiliSearch\Client;
+use Meilisearch\Client;
 
 $client = new Client(config('scout.meilisearch.host'), config('scout.meilisearch.key'));
 

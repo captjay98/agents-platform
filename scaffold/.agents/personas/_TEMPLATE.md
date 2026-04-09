@@ -1,6 +1,7 @@
 ---
 name: Persona Name
 description: One-line role description
+model: inherit
 ---
 
 # Persona Name

@@ -10,7 +10,7 @@ description: Google Maps integration in Flutter. Use when rendering maps, adding
 ```yaml
 dependencies:
   google_maps_flutter: ^2.5.0
-  geolocator: ^14.0.0
+  geolocator: ^13.0.0
   geocoding: ^4.0.0
 ```
 

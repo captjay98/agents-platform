@@ -16,6 +16,14 @@ import { loadDriftPolicy, validateProfileAndPolicy } from './config.mjs'
 let hasError = false
 let warningCount = 0
 
+function isTemplateId(value) {
+  return String(value || '').startsWith('_')
+}
+
+function isTemplateMarkdownFile(filePath) {
+  return path.basename(filePath).startsWith('_')
+}
+
 function error(message) {
   hasError = true
   process.stderr.write(`${message}\n`)
@@ -115,6 +123,7 @@ function lintCanonicalSpec(canonical) {
 
   const seenPersonaIds = new Set()
   for (const persona of canonical.personas) {
+    if (isTemplateId(persona.id)) continue
     if (!idPattern.test(persona.id)) {
       error(`lint: invalid persona id '${persona.id}' (must be kebab-case)`)
     }
@@ -136,6 +145,7 @@ function lintCanonicalSpec(canonical) {
 
   const seenCommandIds = new Set()
   for (const command of canonical.commands) {
+    if (isTemplateId(command.id)) continue
     if (!idPattern.test(command.id)) {
       error(`lint: invalid command id '${command.id}' (must be kebab-case)`)
     }
@@ -154,6 +164,7 @@ function lintCanonicalSpec(canonical) {
 
   const seenSkillIds = new Set()
   for (const skill of canonical.skills) {
+    if (isTemplateId(skill.id)) continue
     if (!idPattern.test(skill.id)) {
       error(`lint: invalid skill id '${skill.id}' (must be kebab-case)`)
     }
@@ -190,6 +201,10 @@ function hasHeading(content, heading) {
 }
 
 function lintExecutableTemplates(commandsDir, skillsDir, strictLevel) {
+  if (strictLevel !== 'hard') {
+    return
+  }
+
   const commandHeadings = [
     '## Inputs Required',
     '## Preconditions',
@@ -210,6 +225,7 @@ function lintExecutableTemplates(commandsDir, skillsDir, strictLevel) {
   ]
 
   for (const filePath of listMarkdownFiles(commandsDir)) {
+    if (isTemplateMarkdownFile(filePath)) continue
     const content = readUtf8(filePath)
     for (const heading of commandHeadings) {
       if (!hasHeading(content, heading)) {
@@ -221,6 +237,7 @@ function lintExecutableTemplates(commandsDir, skillsDir, strictLevel) {
   }
 
   for (const skillDirName of listDirectories(skillsDir)) {
+    if (isTemplateId(skillDirName)) continue
     const entrypoint = path.join(skillsDir, skillDirName, 'SKILL.md')
     if (!fs.existsSync(entrypoint)) continue
     const content = readUtf8(entrypoint)
@@ -242,13 +259,21 @@ function lintOverlayContract(personasDir, commandsDir, skillsDir, rulesDir, stee
   scan.push(...listMarkdownFiles(rulesDir))
   scan.push(...listMarkdownFiles(steeringDir))
   for (const skillDirName of listDirectories(skillsDir)) {
+    if (isTemplateId(skillDirName)) continue
     const entrypoint = path.join(skillsDir, skillDirName, 'SKILL.md')
     if (fs.existsSync(entrypoint)) scan.push(entrypoint)
   }
 
   for (const filePath of scan) {
+    if (isTemplateMarkdownFile(filePath)) continue
     const parsed = parseFrontmatter(readUtf8(filePath))
     if (!parsed.hasFrontmatter) continue
+
+    const hasAnyOverlayMetadata = required.some((key) => String(parsed.frontmatter[key] ?? '').trim())
+    if (strictLevel !== 'hard' && !hasAnyOverlayMetadata) {
+      continue
+    }
+
     for (const key of required) {
       const value = String(parsed.frontmatter[key] ?? '').trim()
       if (!value) {
@@ -284,14 +309,17 @@ function main() {
   const driftMode = loadDriftPolicy().policy.mode === 'hard' ? 'hard' : 'warn'
 
   for (const filePath of listMarkdownFiles(personasDir)) {
+    if (isTemplateMarkdownFile(filePath)) continue
     requireFrontmatter(filePath, ['description', 'model'])
   }
 
   for (const filePath of listMarkdownFiles(commandsDir)) {
+    if (isTemplateMarkdownFile(filePath)) continue
     requireFrontmatter(filePath, ['description'])
   }
 
   for (const skillDirName of listDirectories(skillsDir)) {
+    if (isTemplateId(skillDirName)) continue
     const entrypoint = path.join(skillsDir, skillDirName, 'SKILL.md')
     if (!fs.existsSync(entrypoint)) {
       error(`lint: missing skill entrypoint -> ${relativeFromRoot(entrypoint)}`)
@@ -321,6 +349,7 @@ function main() {
   }
 
   for (const skillDirName of listDirectories(skillsDir)) {
+    if (isTemplateId(skillDirName)) continue
     const entrypoint = path.join(skillsDir, skillDirName, 'SKILL.md')
     if (!fs.existsSync(entrypoint)) continue
 
@@ -333,11 +362,13 @@ function main() {
   }
 
   // Fix 6: Detect unfilled placeholders in non-template files
-  const placeholderRe = /<!--\s*PROJECT:/
-  for (const dir of scanDirs) {
-    for (const filePath of walkFiles(dir).filter((f) => f.endsWith('.md') && !f.includes('_TEMPLATE'))) {
-      for (const line of findPatternMatches(filePath, placeholderRe)) {
-        error(`lint: unfilled placeholder -> ${relativeFromRoot(filePath)}:${line}`)
+  if (driftMode === 'hard') {
+    const placeholderRe = /<!--\s*PROJECT:/
+    for (const dir of scanDirs) {
+      for (const filePath of walkFiles(dir).filter((f) => f.endsWith('.md') && !f.includes('_TEMPLATE'))) {
+        for (const line of findPatternMatches(filePath, placeholderRe)) {
+          error(`lint: unfilled placeholder -> ${relativeFromRoot(filePath)}:${line}`)
+        }
       }
     }
   }

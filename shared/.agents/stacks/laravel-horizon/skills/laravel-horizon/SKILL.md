@@ -67,9 +67,9 @@ return [
 
 ```php
 // Dispatch to specific queues
-ProcessPayment::dispatch($payment)->onQueue('high')
-SendWelcomeEmail::dispatch($user)->onQueue('notifications')
-GenerateReport::dispatch($report)->onQueue('low')
+ProcessPayment::dispatch($payment)->onQueue('high');
+SendWelcomeEmail::dispatch($user)->onQueue('notifications');
+GenerateReport::dispatch($report)->onQueue('low');
 
 // Job class default queue
 class ProcessPayment implements ShouldQueue

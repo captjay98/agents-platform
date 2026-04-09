@@ -17,7 +17,7 @@ import {
 
 export const meta = {
   name: 'kiro',
-  outputDirs: ['.kiro/agents', '.kiro/prompts', '.kiro/skills', '.kiro/steering', '.kiro/hooks', '.kiro/settings/hooks.json', '.kiro/settings/mcp.json', '.kiro/README.md'],
+  outputDirs: ['.kiro/agents', '.kiro/prompts', '.kiro/skills', '.kiro/steering', '.kiro/hooks', '.kiro/settings/hooks.json', '.kiro/README.md'],
   mcpCapable: true,
 }
 
@@ -31,12 +31,12 @@ const HOOK_EVENT_MAP = {
 
 function renderKiroAgentMarkdown(persona, template) {
   const description = persona.description || template.description || ''
-  const model = template.model || persona.model || 'claude-sonnet-4.6'
+  const model = template.model || persona.model || 'auto'
   const body = String(persona.body ?? persona.raw ?? '').trimStart()
   const mcpTools = Array.isArray(template.tools)
     ? template.tools.filter((tool) => typeof tool === 'string' && tool.startsWith('@'))
     : []
-  const tools = ['@builtin', ...mcpTools.filter((tool) => tool !== '@builtin')]
+  const tools = ['@builtin', '@sequential-thinking', ...mcpTools.filter((tool) => tool !== '@builtin' && tool !== '@sequential-thinking')]
 
   const frontmatter = [
     '---',
@@ -44,7 +44,6 @@ function renderKiroAgentMarkdown(persona, template) {
     `description: ${JSON.stringify(description)}`,
     `tools: ${JSON.stringify(tools)}`,
     `model: ${model}`,
-    'includeMcpJson: false',
     '---',
     '',
   ].join('\n')
@@ -99,6 +98,16 @@ function mapHooks(hooks, { strict }) {
   return { hooks: compact, warnings }
 }
 
+function defaultTemplateForPersona(persona) {
+  return {
+    name: persona.id,
+    description: persona.description || `${persona.id} subagent`,
+    prompt: `file://./${persona.id}.md`,
+    tools: ['@builtin', '@sequential-thinking'],
+    model: persona.model || 'auto',
+  }
+}
+
 export function renderKiro(canonical, options = {}) {
   const strict = Boolean(options.strict)
   const projectName = options.projectName || 'Project'
@@ -111,11 +120,14 @@ export function renderKiro(canonical, options = {}) {
 
   for (const persona of subagents) {
     const templatePath = path.join(AGENTS_ROOT, 'kiro', 'templates', `${persona.id}.json`)
-    if (!fs.existsSync(templatePath)) {
-      throw new Error(`Missing Kiro template: ${templatePath}`)
+    const hasTemplate = fs.existsSync(templatePath)
+    if (!hasTemplate) {
+      warnings.push(`kiro: missing template for '${persona.id}', using default template`)
     }
 
-    const template = JSON.parse(readUtf8(templatePath))
+    const template = hasTemplate
+      ? JSON.parse(readUtf8(templatePath))
+      : defaultTemplateForPersona(persona)
     template.name = persona.id
     template.description = persona.description || template.description
     template.prompt = `file://./${persona.id}.md`
@@ -156,7 +168,8 @@ export function renderKiro(canonical, options = {}) {
     }),
   )
 
-  if (canonical.mcpServers) {
+  const hasDefinedServers = canonical.mcpServers?.servers && Object.keys(canonical.mcpServers.servers).length > 0
+  if (hasDefinedServers) {
     const mcpServers = renderMcpConfig(canonical.mcpServers, 'kiro')
     if (mcpServers) {
       writeUtf8(
