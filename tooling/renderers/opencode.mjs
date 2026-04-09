@@ -13,7 +13,7 @@ import {
 export const meta = {
   name: 'opencode',
   outputDirs: ['.opencode/agents', '.opencode/commands', '.opencode/skills', '.opencode/RULES.md', '.opencode/plugins/hooks.generated.ts', 'opencode.json'],
-  mcpCapable: false,
+  mcpCapable: true,
 }
 
 export function renderOpencode(canonical) {
@@ -208,6 +208,9 @@ export const GeneratedHooks = async ({ directory, worktree }) => {
   }
 
   writeUtf8(path.join(ROOT, 'opencode.json'), JSON.stringify(config, null, 2) + '\n')
+
+  // Prevent OpenCode plugin node_modules from being committed
+  writeUtf8(path.join(ROOT, '.opencode', '.gitignore'), 'node_modules/\n')
 
   return { warnings: [] }
 }
