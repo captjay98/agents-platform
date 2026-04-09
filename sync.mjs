@@ -201,6 +201,40 @@ export function syncGlobalSkills({ dryRun = false } = {}) {
     }
   }
 
+  // Mirror ~/.agents/skills/ to each tool's global skills dir
+  const toolDirs = ['.kiro/skills', '.claude/skills', '.factory/skills', '.opencode/skills']
+    .map(d => path.join(os.homedir(), d))
+    .filter(d => fs.existsSync(path.dirname(d)))
+
+  for (const toolDir of toolDirs) {
+    if (!fs.existsSync(toolDir)) fs.mkdirSync(toolDir, { recursive: true })
+
+    // Sync: create symlinks from tool dir → ~/.agents/skills/<name>
+    for (const entry of fs.readdirSync(targetDir, { withFileTypes: true })) {
+      if (entry.name.startsWith('.')) continue
+      const agentsSkill = path.join(targetDir, entry.name)
+      const toolSkill = path.join(toolDir, entry.name)
+      if (fs.existsSync(toolSkill)) {
+        const stat = fs.lstatSync(toolSkill)
+        if (stat.isSymbolicLink()) {
+          if (fs.readlinkSync(toolSkill) === agentsSkill) continue
+          if (!dryRun) fs.unlinkSync(toolSkill)
+        } else continue // Real dir — user owns it
+      }
+      if (!dryRun) fs.symlinkSync(agentsSkill, toolSkill)
+    }
+
+    // Clean stale symlinks pointing to ~/.agents/skills/
+    for (const entry of fs.readdirSync(toolDir, { withFileTypes: true })) {
+      const full = path.join(toolDir, entry.name)
+      if (!fs.lstatSync(full).isSymbolicLink()) continue
+      const linkTarget = fs.readlinkSync(full)
+      if (linkTarget.startsWith(targetDir) && !fs.existsSync(linkTarget)) {
+        if (!dryRun) fs.unlinkSync(full)
+      }
+    }
+  }
+
   if (changed === 0 && !dryRun) console.log('  global skills up to date')
 }
 
