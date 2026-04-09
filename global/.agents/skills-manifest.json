@@ -1,0 +1,131 @@
+{
+  "description": "Tracks sources for global tool-level skills. Used by update-skills.mjs to pull latest versions.",
+  "skills": {
+    "brainstorming": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "writing-plans": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "executing-plans": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "dispatching-parallel-agents": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "subagent-driven-development": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "finishing-a-development-branch": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "using-git-worktrees": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "prompt-refiner": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "code-review-checklist": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "requesting-code-review": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "receiving-code-review": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "verification-before-completion": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "using-superpowers": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "find-skills": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "agent-browser": {
+      "source": "npx-skills-bundled",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "writing-skills": {
+      "source": "anthropics/skills",
+      "skill": "skill-creator",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "search": {
+      "source": "tavily/skills",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "extract": {
+      "source": "tavily/skills",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "crawl": {
+      "source": "tavily/skills",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "research": {
+      "source": "tavily/skills",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "tavily-best-practices": {
+      "source": "tavily/skills",
+      "method": "npx-skills",
+      "installed": "2026-02-28"
+    },
+    "systematic-debugging": {
+      "source": "custom",
+      "method": "manual",
+      "installed": "2026-02-28"
+    },
+    "test-driven-development": {
+      "source": "custom",
+      "method": "manual",
+      "installed": "2026-02-28"
+    },
+    "documentation-standards": {
+      "source": "custom",
+      "method": "manual",
+      "installed": "2026-02-28"
+    },
+    "accessibility-patterns": {
+      "source": "custom",
+      "method": "manual",
+      "installed": "2026-02-28"
+    }
+  }
+}
