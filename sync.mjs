@@ -267,9 +267,15 @@ export function syncTo(projectPath, { dryRun = false, toolingOnly = false } = {}
     for (const stack of stacks) {
       const stackDir = resolveStackDir(stack)
       if (!stackDir) continue
-      const stackFiles = collectFiles(stackDir).filter(f => f !== 'stack.toml')
+      // Skills and rules: always overwrite (platform canonical)
+      const stackFiles = collectFiles(stackDir).filter(f => f !== 'stack.toml' && !f.startsWith('commands/') && !f.startsWith('commands\\'))
       if (stackFiles.length) {
         sharedChanged += syncFiles(stackDir, agentsTarget, stackFiles, { dryRun, label: ` [stack:${stack}]`, trackedFiles })
+      }
+      // Commands: skipExisting (project customizations win)
+      const commandFiles = collectFiles(stackDir).filter(f => f.startsWith('commands/') || f.startsWith('commands\\'))
+      if (commandFiles.length) {
+        sharedChanged += syncFiles(stackDir, agentsTarget, commandFiles, { dryRun, label: ` [stack:${stack}]`, skipExisting: true, trackedFiles })
       }
     }
 

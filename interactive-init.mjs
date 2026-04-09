@@ -122,7 +122,13 @@ async function main() {
 
     const skillCount = fs.readdirSync(path.join(resolved, '.agents', 'skills'), { withFileTypes: true })
       .filter(d => d.isDirectory() && d.name !== '_TEMPLATE').length
-    console.log(`Done: ${name} — ${skillCount} skills, ${detected.length} stacks`)
+    console.log(`Done: ${name} — ${skillCount} skills, ${detected.length} stacks
+
+Next steps:
+  1. Fill in persona placeholders:  .agents/personas/*.md
+  2. Fill in steering docs:         .agents/steering/*.md
+  3. Update project memory:         .agents/memory/project-memory.md
+  4. Review commands:               .agents/commands/*.md`)
     return
   }
 
@@ -223,7 +229,14 @@ async function main() {
   spawnSync('bun', [path.join(resolved, '.agents', 'scripts', 'build.mjs')], { cwd: resolved, stdio: 'pipe' })
   s4.stop('Tool configs generated')
 
-  p.outro(`Done! ${projectName} is ready with ${skillCount} skills across ${stacks.length} stacks.`)
+  p.outro(`Done! ${projectName} is ready with ${skillCount} skills across ${stacks.length} stacks.
+
+Next steps:
+  1. Fill in persona placeholders:  .agents/personas/*.md
+     (replace <!-- PROJECT: --> comments with your project's patterns)
+  2. Fill in steering docs:         .agents/steering/*.md
+  3. Update project memory:         .agents/memory/project-memory.md
+  4. Review commands:               .agents/commands/*.md`)
 }
 
 main().catch(console.error)
