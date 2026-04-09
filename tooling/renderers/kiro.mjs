@@ -7,6 +7,7 @@ import {
   hooksForTool,
   ensureDir,
   readUtf8,
+  removeIfExists,
   renderGuide,
   renderMcpConfig,
   resetDir,
@@ -17,7 +18,7 @@ import {
 
 export const meta = {
   name: 'kiro',
-  outputDirs: ['.kiro/agents', '.kiro/prompts', '.kiro/skills', '.kiro/steering', '.kiro/hooks', '.kiro/settings/hooks.json', '.kiro/README.md'],
+  outputDirs: ['.kiro/agents', '.kiro/prompts', '.kiro/skills', '.kiro/steering', '.kiro/hooks', '.kiro/settings/hooks.json'],
   mcpCapable: true,
 }
 
@@ -158,15 +159,8 @@ export function renderKiro(canonical, options = {}) {
     JSON.stringify({ hooks: mapped.hooks }, null, 2) + '\n',
   )
 
-  writeUtf8(
-    path.join(ROOT, '.kiro', 'README.md'),
-    renderGuide({
-      title: `${prettyName} - Kiro Configuration`,
-      subtitle: 'Generated Kiro configuration guide for agents, prompts, skills, steering, and hooks.',
-      toolName: 'Kiro CLI',
-      canonical,
-    }),
-  )
+  // Kiro auto-reads AGENTS.md — no need for a separate README.md
+  removeIfExists(path.join(ROOT, '.kiro', 'README.md'))
 
   const hasDefinedServers = canonical.mcpServers?.servers && Object.keys(canonical.mcpServers.servers).length > 0
   if (hasDefinedServers) {
