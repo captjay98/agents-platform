@@ -100,6 +100,31 @@ function listAvailableStacks() {
 
 async function main() {
   const projectPath = process.argv[2]
+  const autoMode = process.argv.includes('--auto')
+
+  if (autoMode) {
+    // Agent-friendly: no prompts, use detected stacks
+    const resolved = path.resolve(projectPath)
+    if (!fs.existsSync(resolved)) { console.error(`Path not found: ${resolved}`); process.exit(1) }
+
+    const detected = detectStacks(resolved)
+    const name = path.basename(resolved)
+    console.log(`Detected stacks: ${detected.join(', ') || 'none'}`)
+
+    const { spawnSync } = await import('node:child_process')
+    spawnSync('bun', [path.join(ROOT, 'bootstrap.mjs'), resolved, '--toolchains', 'kiro,claude'], { stdio: 'pipe' })
+
+    const profilePath = path.join(resolved, '.agents', 'profile.toml')
+    fs.writeFileSync(profilePath, `[project]\nname = "${name}"\n\n[toolchains]\nenabled = ["kiro", "claude"]\n\nstacks = [${detected.map(s => `"${s}"`).join(', ')}]\n`)
+
+    spawnSync('bun', [path.join(ROOT, 'sync.mjs'), resolved], { stdio: 'inherit' })
+    spawnSync('bun', [path.join(resolved, '.agents', 'scripts', 'build.mjs')], { cwd: resolved, stdio: 'inherit' })
+
+    const skillCount = fs.readdirSync(path.join(resolved, '.agents', 'skills'), { withFileTypes: true })
+      .filter(d => d.isDirectory() && d.name !== '_TEMPLATE').length
+    console.log(`Done: ${name} — ${skillCount} skills, ${detected.length} stacks`)
+    return
+  }
 
   p.intro('agents-platform setup')
 

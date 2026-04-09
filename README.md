@@ -303,6 +303,11 @@ stacks = ["<detected-stacks>"]
 
 ```bash
 cd /path/to/agents-platform
+
+# Auto mode — no prompts, uses detected stacks (agent-friendly)
+agents-platform setup /path/to/project --auto
+
+# Or manual
 agents-platform init /path/to/project
 # Then edit .agents/profile.toml with detected stacks
 agents-platform sync --all
