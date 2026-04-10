@@ -249,6 +249,20 @@ const MCP_TARGETS = [
   { name: 'factory', path: () => path.join(os.homedir(), '.factory', 'mcp.json'), key: 'mcpServers', preserve: [] },
 ]
 
+// Resolve $VAR and ${VAR} references in MCP env fields from process.env
+function resolveEnvVars(servers) {
+  const resolved = JSON.parse(JSON.stringify(servers))
+  for (const server of Object.values(resolved)) {
+    if (!server.env) continue
+    for (const [key, val] of Object.entries(server.env)) {
+      if (typeof val !== 'string') continue
+      const m = val.match(/^\$\{?([A-Z_][A-Z0-9_]*)\}?$/)
+      if (m && process.env[m[1]]) server.env[key] = process.env[m[1]]
+    }
+  }
+  return resolved
+}
+
 export function syncGlobalMcp({ dryRun = false } = {}) {
   if (!fs.existsSync(GLOBAL_MCP_PATH)) return
   const source = JSON.parse(fs.readFileSync(GLOBAL_MCP_PATH, 'utf8'))
@@ -282,8 +296,9 @@ export function syncGlobalMcp({ dryRun = false } = {}) {
       }
     }
 
-    // Check if anything changed
-    if (JSON.stringify(existing) === JSON.stringify(merged)) continue
+    // Check if anything changed (compare against resolved values)
+    const resolvedMerged = resolveEnvVars(merged)
+    if (JSON.stringify(existing) === JSON.stringify(resolvedMerged)) continue
 
     if (dryRun) {
       console.log(`  would update: ${target.name}`)
@@ -291,7 +306,7 @@ export function syncGlobalMcp({ dryRun = false } = {}) {
       continue
     }
 
-    config[target.key] = merged
+    config[target.key] = resolvedMerged
     fs.mkdirSync(configDir, { recursive: true })
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n')
     console.log(`  updated: ${target.name}`)
