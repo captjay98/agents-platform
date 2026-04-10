@@ -218,31 +218,84 @@ When you run `agents-platform sync`, five layers apply in order:
 
 **Stack-scoped commands:** Stacks can include commands (e.g., `cloudflare-deploy` in the cloudflare stack). These use `skipExisting` — delivered once, then the project owns them. A project without the cloudflare stack never gets cloudflare commands.
 
-## Quick Start
+## Getting Started
+
+### 1. Install the platform
 
 ```bash
-# Install
 git clone <repo-url> && cd agents-platform
-bun install && bun link
-
-# Interactive setup (auto-detects tech stack)
-agents-platform setup ~/projects/my-app
-
-# Or agent-friendly (no prompts)
-agents-platform setup ~/projects/my-app --auto
-
-# Or manual
-agents-platform init ~/projects/my-app
-vim ~/projects/my-app/.agents/profile.toml
-agents-platform sync --all
-cd ~/projects/my-app && bun .agents/scripts/build.mjs
+bun install
+bun link    # makes `agents-platform` available globally
 ```
 
-Post-setup, fill in:
-1. Persona placeholders: `.agents/personas/*.md`
-2. Steering docs: `.agents/steering/*.md`
-3. Project memory: `.agents/memory/project-memory.md`
-4. Hook session-start message: `.agents/hooks/hooks.json`
+### 2. Set up your first project
+
+```bash
+agents-platform setup ~/projects/my-app
+```
+
+This will:
+- Scan your project for `package.json`, `composer.json`, `pubspec.yaml`, `wrangler.toml`
+- Auto-detect matching stacks (e.g., `nextjs`, `tailwind`, `sentry`)
+- Let you confirm or adjust the detected stacks
+- Scaffold `.agents/` with personas, commands, steering docs, hooks, memory
+- Sync skills and rules matching your stacks
+- Run `build.mjs` to generate tool configs (`.claude/`, `.kiro/`, `.factory/`, `.opencode/`)
+
+You'll see:
+
+```
+✔ Detected stacks: nextjs, tailwind, sentry, cloudflare
+✔ Scaffolded .agents/
+✔ Synced 58 skills across 4 stacks
+✔ Tool configs generated
+
+Done! my-app is ready with 58 skills across 4 stacks.
+
+Next steps:
+  1. Fill in persona placeholders:  .agents/personas/*.md
+  2. Fill in steering docs:         .agents/steering/*.md
+  3. Update project memory:         .agents/memory/project-memory.md
+  4. Review commands:               .agents/commands/*.md
+```
+
+### 3. Customize for your project
+
+The scaffold provides templates with `<!-- PROJECT: -->` placeholders. Fill these in:
+
+- **Personas** — add your project's specific patterns, file paths, and conventions to each role
+- **Steering docs** — describe your product, tech stack, architecture, and coding standards
+- **Memory** — workspace shape, operational truths, high-risk areas, verification commands
+- **Hooks** — customize the session-start message with your project's critical rules
+- **Project MCP** — add project-specific MCP servers (database, monitoring) to `.agents/mcp/servers.json`
+
+### 4. Start using AI tools
+
+Open your project in any supported tool — it now has full project context:
+
+```bash
+cd ~/projects/my-app
+kiro          # Kiro reads .kiro/ + AGENTS.md
+claude        # Claude reads .claude/CLAUDE.md
+opencode      # OpenCode reads opencode.json → AGENTS.md
+```
+
+### 5. Keep in sync
+
+When the platform gets new skills or updates:
+
+```bash
+cd ~/path/to/agents-platform
+bun update-skills.mjs --all    # pull latest upstream skills
+agents-platform sync --all     # push to all projects
+```
+
+When you change project config:
+
+```bash
+cd ~/projects/my-app
+bun .agents/scripts/build.mjs  # regenerate tool configs
+```
 
 ## CLI
 
