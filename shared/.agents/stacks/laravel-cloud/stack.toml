@@ -1,0 +1,4 @@
+[stack]
+name = "laravel-cloud"
+description = "Laravel Cloud deployment and management"
+requires = ["laravel-api"]

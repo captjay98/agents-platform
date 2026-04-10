@@ -1,0 +1,4 @@
+[stack]
+name = "payments-laravel"
+description = "Payment provider integrations for Laravel (Paystack, Nomba, Squad)"
+requires = ["laravel-api"]

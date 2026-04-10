@@ -1,0 +1,4 @@
+[stack]
+name = "payments-nestjs"
+description = "Payment provider integrations for NestJS (Paystack)"
+requires = ["nestjs"]

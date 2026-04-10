@@ -1,0 +1,4 @@
+[stack]
+name = "payments-typescript"
+description = "Payment provider integrations for TypeScript (Nomba, Squad)"
+requires = []
