@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "description": "Global MCP servers — synced to all AI tools by agents-platform",
+  "servers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "autoApprove": ["sequentialthinking"],
+      "disabled": false
+    },
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "tavily-mcp"],
+      "autoApprove": ["tavily_crawl"],
+      "disabled": false
+    },
+    "Context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "disabled": false
+    },
+    "semgrep": {
+      "command": "semgrep",
+      "args": ["mcp"],
+      "disabled": false
+    },
+    "exa": {
+      "url": "https://mcp.exa.ai/mcp",
+      "autoApprove": ["web_search_exa"],
+      "disabled": false
+    }
+  }
+}

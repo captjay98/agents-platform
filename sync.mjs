@@ -238,6 +238,69 @@ export function syncGlobalSkills({ dryRun = false } = {}) {
   if (changed === 0 && !dryRun) console.log('  global skills up to date')
 }
 
+const GLOBAL_MCP_PATH = path.join(__dirname, 'global', '.agents', 'mcp', 'servers.json')
+
+// Tool-specific global MCP config locations and formats
+const MCP_TARGETS = [
+  { name: 'kiro', path: () => path.join(os.homedir(), '.kiro', 'settings', 'mcp.json'), key: 'mcpServers', preserve: ['powers'] },
+  { name: 'gemini', path: () => path.join(os.homedir(), '.gemini', 'settings.json'), key: 'mcpServers', preserve: ['experimental'] },
+  { name: 'opencode', path: () => path.join(os.homedir(), '.config', 'opencode', 'opencode.json'), key: 'mcp', preserve: ['$schema', 'instructions'] },
+  { name: 'claude', path: () => path.join(os.homedir(), 'claude', 'mcp.json'), key: 'mcpServers', preserve: [] },
+  { name: 'factory', path: () => path.join(os.homedir(), '.factory', 'mcp.json'), key: 'mcpServers', preserve: [] },
+]
+
+export function syncGlobalMcp({ dryRun = false } = {}) {
+  if (!fs.existsSync(GLOBAL_MCP_PATH)) return
+  const source = JSON.parse(fs.readFileSync(GLOBAL_MCP_PATH, 'utf8'))
+  const platformServers = source.servers || {}
+  const platformNames = new Set(Object.keys(platformServers))
+  let changed = 0
+
+  for (const target of MCP_TARGETS) {
+    const configPath = target.path()
+    const configDir = path.dirname(configPath)
+    if (!fs.existsSync(configDir)) continue
+
+    let config = {}
+    if (fs.existsSync(configPath)) {
+      try { config = JSON.parse(fs.readFileSync(configPath, 'utf8')) } catch { config = {} }
+    }
+
+    const existing = config[target.key] || {}
+
+    // Merge: platform servers overwrite, user servers preserved
+    const merged = { ...existing }
+    for (const [name, server] of Object.entries(platformServers)) {
+      merged[name] = server
+    }
+
+    // Remove servers that were previously platform-managed but no longer in source
+    // (We only remove servers that exactly match a platform definition)
+    for (const name of Object.keys(merged)) {
+      if (!platformNames.has(name) && !Object.prototype.hasOwnProperty.call(existing, name)) {
+        delete merged[name]
+      }
+    }
+
+    // Check if anything changed
+    if (JSON.stringify(existing) === JSON.stringify(merged)) continue
+
+    if (dryRun) {
+      console.log(`  would update: ${target.name}`)
+      changed++
+      continue
+    }
+
+    config[target.key] = merged
+    fs.mkdirSync(configDir, { recursive: true })
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n')
+    console.log(`  updated: ${target.name}`)
+    changed++
+  }
+
+  if (changed === 0 && !dryRun) console.log('  global mcp up to date')
+}
+
 export function listAllStacks() {
   const stacks = []
   if (!fs.existsSync(STACKS_DIR)) return stacks
@@ -352,6 +415,8 @@ function main() {
     }
     console.log('\n→ global skills')
     syncGlobalSkills({ dryRun })
+    console.log('\n→ global mcp')
+    syncGlobalMcp({ dryRun })
     for (const p of projects) {
       console.log(`\n→ ${p.path}`)
       syncTo(p.path, { dryRun, toolingOnly })
