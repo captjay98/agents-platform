@@ -1,43 +1,45 @@
 # agents-platform
 
-Stack-based AI agent skill distribution for multi-project workspaces. Give every project the right skills for its tech stack — automatically.
+A complete AI agent configuration system for multi-project workspaces. Distribute skills, personas, commands, rules, and project context to AI agents — scoped to each project's tech stack.
 
 ## The Problem
 
-You have multiple projects with different tech stacks. AI agents (Claude, Kiro, Cursor, etc.) give generic advice because they don't know your conventions. Manually copying skills between projects leads to drift, duplication, and stale patterns.
+You have multiple projects with different tech stacks. AI agents give generic advice because they don't know your conventions. Manually configuring each project leads to drift, duplication, and stale patterns.
 
 ## The Solution
 
 ```
 agents-platform (central hub)
      │
-     ├── 76 upstream skills (auto-updated from open-source repos)
-     ├── 71 custom skills (your conventions, patterns, integrations)
+     ├── 154 project skills (auto-updated from open-source repos + custom)
+     ├── 22 global skills (workflow, quality, research — all tools)
      ├── 30 stacks (laravel-api, tanstack-fullstack, flutter, nestjs, etc.)
+     ├── 27 commands (19 universal + 8 stack-scoped)
+     ├── 31 rules (7 shared + 3 scaffold + 21 stack-scoped)
+     ├── 9 personas (role-based agent identities)
+     ├── 5 renderers (Claude, Kiro, Gemini, OpenCode, Factory)
+     ├── 5 global MCP servers (sequential-thinking, tavily, Context7, semgrep, exa)
      │
-     └── sync ──► Project A (picks stacks → gets matching skills)
-                  Project B (different stacks → different skills)
-                  Project C (...)
+     └── sync ──► Project A (picks stacks → gets matching config)
+                  Project B (different stacks → different config)
 ```
 
-Each project declares its stacks in `profile.toml`. Sync delivers only the relevant skills. A Laravel project gets Laravel skills. A TanStack project gets TanStack skills. No pollution.
+Each project declares its stacks in `profile.toml`. Sync delivers only the relevant content.
 
 ## What's Included
 
-agents-platform isn't just skills — it's a complete agent configuration system:
-
 | Component | Count | What it does |
 |-----------|-------|-------------|
-| **Skills** | 147 | Technical knowledge — patterns, conventions, integrations |
-| **Personas** | 9 | Role-based agent identities (backend-engineer, frontend-engineer, qa-engineer, etc.) |
-| **Commands** | 22 | Executable workflows (code-review, deploy, incident-commander, performance-audit, etc.) |
-| **Rules** | 7 shared + per-stack | Coding constraints agents must follow (git-safety, guard-clauses, no-todos, etc.) |
-| **Steering docs** | 10 | Project context (product map, tech stack, coding standards, testing guidelines) |
-| **Hooks** | Session-start | Auto-triggered behaviors (e.g., remind agent of project context on session start) |
+| **Skills** | 154 project + 22 global | Technical knowledge — patterns, conventions, integrations |
+| **Personas** | 9 | Role-based agent identities with delegation patterns |
+| **Commands** | 19 universal + 8 stack-scoped | Executable workflows (code-review, deploy, migrate, debug, etc.) |
+| **Rules** | 7 shared + 3 scaffold + 21 stack | Coding constraints agents must follow |
+| **Steering docs** | 10 | Project context (product map, tech stack, coding standards) |
+| **Hooks** | 4 | Session-start reminder, conventional commits, branch protection, lockfile protection |
 | **Memory** | Per-project | Institutional knowledge that persists across sessions |
 | **Renderers** | 5 | Generate configs for Claude, Kiro, Gemini, OpenCode, Factory |
-| **Global skills** | 26 | Tool-level skills shared across all AI tools via `~/.agents/` symlinks |
-| **Stacks** | 30 | Technology-specific bundles of skills + rules |
+| **Global MCP** | 5 servers | sequential-thinking, tavily, Context7, semgrep, exa — all tools |
+| **Stacks** | 30 | Technology-specific bundles of skills, rules, and commands |
 
 ### Personas
 
@@ -49,85 +51,76 @@ devops-engineer     security-engineer    qa-engineer
 product-architect   data-analyst         mobile-engineer
 ```
 
-Each persona includes autonomous instructions, real code patterns, critical constraints, and delegation priorities. Kiro gets JSON templates for subagent spawning.
-
 ### Commands
 
-22 executable workflows — not prompts, but runbooks with actual commands, expected outputs, and GO/NO-GO criteria:
+27 executable workflows — 19 universal (all projects) + 8 stack-scoped (only matching projects):
 
+**Universal:**
 ```
-code-review          commit-plan          execute
-performance-audit    accessibility-audit  ui-audit
-cloudflare-deploy    cloudflare-debug     cloudflare-setup
-incident-commander   release-readiness    test-coverage
-sentry-setup         sentry-triage        neon-setup
-plan-feature         sync-docs            ...
+code-review    commit-plan    execute         plan-feature
+debug          migrate        refactor        dependency-update
+prime          quickstart     release-readiness
+test-coverage  ui-audit       accessibility-audit
+incident-commander  performance-audit  sync-docs
+neon-setup     update-devlog
+```
+
+**Stack-scoped:**
+```
+cloudflare-deploy/debug/setup    → cloudflare stack only
+sentry-setup/triage              → sentry stack only
+laravel-cloud-deploy/debug/setup → laravel-cloud stack only
 ```
 
 ### Renderers
 
-Each renderer transforms `.agents/` content into tool-specific config:
+| Renderer | Output | Skills approach |
+|----------|--------|----------------|
+| Claude | `.claude/CLAUDE.md` | Copies to `.claude/skills/` |
+| Kiro | `.kiro/` | Copies to `.kiro/skills/`, reads AGENTS.md |
+| Gemini | `.gemini/` | Reads `.agents/` directly |
+| OpenCode | `.opencode/` + `opencode.json` | Copies to `.opencode/skills/` |
+| Factory | `.factory/FACTORY.md` | Copies to `.factory/skills/` |
 
-| Renderer | Output | What it generates |
-|----------|--------|-------------------|
-| Claude | `.claude/CLAUDE.md` | Single markdown with all personas, skills, rules |
-| Kiro | `.kiro/` | Steering docs, skill files, subagent templates |
-| Gemini | `.gemini/` | Gemini-compatible agent config |
-| OpenCode | `.opencode/` | OpenCode agent config |
-| Factory | `.factory/FACTORY.md` | Factory-compatible markdown |
+### Global MCP
 
-Drop a new `.mjs` file in `tooling/renderers/` and it's auto-discovered.
+5 MCP servers managed by the platform, synced to all AI tools:
 
-## Before / After
+| Server | Purpose |
+|--------|---------|
+| `sequential-thinking` | Reasoning chains for complex tasks |
+| `tavily` | Web search and content extraction |
+| `Context7` | Library documentation lookup |
+| `semgrep` | Code security scanning |
+| `exa` | Web search |
 
-Without skills, an AI agent produces generic code:
+Source of truth: `global/.agents/mcp/servers.json`. Sync writes to each tool's global config.
 
-```typescript
-// ❌ Generic — agent doesn't know your architecture
-app.post('/api/orders', async (req, res) => {
-  const order = await db.query('INSERT INTO orders ...')
-  res.json(order)
-})
-```
+### Global Skills
 
-With `tanstack-four-layer-arch` + `error-handling` skills loaded:
+22 tool-level skills available across all projects and all AI tools:
 
-```typescript
-// ✅ Project-aware — agent follows your four-layer architecture
-export const createOrderFn = createServerFn({ method: 'POST' })
-  .inputValidator(createOrderSchema)
-  .handler(async ({ data }) => {
-    const { withErrorBoundary } = await import('~/features/shared/utils/error-boundary.server')
-    return withErrorBoundary('orders.create', 'orders', async () => {
-      const { requireAuth } = await import('~/features/shared/auth/session/auth-middleware.server')
-      const session = await requireAuth()
-      const { createOrderApplication } = await import('./application.server')
-      return await createOrderApplication(session.user.id, data)
-    })
-  })
-```
+| Source | Count | Skills |
+|--------|-------|--------|
+| obra/superpowers | 13 | brainstorming, writing-plans, executing-plans, dispatching-parallel-agents, etc. |
+| tavily-ai/skills | 5 | search, extract, crawl, research, tavily-best-practices |
+| vercel-labs | 2 | find-skills, agent-browser |
+| anthropics/skills | 1 | writing-skills |
+| custom | 1 | documentation-standards |
 
-Same for Laravel — without skills vs with `laravel-api-conventions`:
+Sync manages symlinks to `~/.agents/skills/` and mirrors to all tool dirs (`~/.kiro/skills/`, `~/.claude/skills/`, etc.).
 
-```php
-// ❌ Generic
-Route::post('/orders', function (Request $request) {
-    $order = Order::create($request->all());
-    return response()->json($order);
-});
+## How It Works
 
-// ✅ Project-aware — thin controller, service layer, ApiResponseTrait
-class OrderController extends Controller
-{
-    use ApiResponseTrait;
+When you run `agents-platform sync`, five layers apply in order:
 
-    public function store(CreateOrderRequest $request, OrderService $service): JsonResponse
-    {
-        $order = $service->createOrder($request->validated());
-        return $this->createdResponse(new OrderResource($order), 'Order created');
-    }
-}
-```
+| Layer | Source | Behavior | Purpose |
+|-------|--------|----------|---------|
+| 0. Global | `global/.agents/` | Symlink to `~/` | Tool-level skills + MCP for all AI tools |
+| 1. Tooling | `tooling/` | Always overwrites | Build scripts, renderers |
+| 2. Scaffold | `scaffold/.agents/` | Skip existing | Project templates (personas, commands, steering) |
+| 3. Shared | `shared/.agents/` | Skip existing | Universal skills and rules |
+| 4. Stacks | `shared/.agents/stacks/<name>/` | Skills/rules overwrite, commands skip existing | Stack-specific content |
 
 ## Quick Start
 
@@ -136,233 +129,86 @@ class OrderController extends Controller
 git clone <repo-url> && cd agents-platform
 bun install && bun link
 
-# Bootstrap a new project
+# Interactive setup (auto-detects tech stack)
+agents-platform setup ~/projects/my-app
+
+# Or agent-friendly (no prompts)
+agents-platform setup ~/projects/my-app --auto
+
+# Or manual
 agents-platform init ~/projects/my-app
-
-# Edit stacks
 vim ~/projects/my-app/.agents/profile.toml
-# stacks = ["laravel-api", "flutter", "cloudflare", "sentry", "tailwind"]
-
-# Sync skills to all projects
 agents-platform sync --all
-
-# Update upstream skills (76 from 12 open-source repos)
-bun update-skills.mjs --all
-agents-platform sync --all
+cd ~/projects/my-app && bun .agents/scripts/build.mjs
 ```
 
-## How It Works
-
-When you run `agents-platform sync`, five layers apply in order:
-
-| Layer | Source | Behavior | Purpose |
-|-------|--------|----------|---------| 
-| 0. Global | `global/.agents/skills/` | Symlink to `~/.agents/skills/` | Tool-level skills shared across all AI tools |
-| 1. Tooling | `tooling/` | Always overwrites | Build scripts, renderers |
-| 2. Scaffold | `scaffold/.agents/` | Skip existing | Project templates (profile, personas, commands) |
-| 3. Shared | `shared/.agents/skills/` | Skip existing | Universal skills all projects get |
-| 4. Stacks | `shared/.agents/stacks/<name>/` | Always overwrites | Stack-specific skills, rules |
-
-Local project skills always win — if a project has its own version of a skill, sync won't overwrite it.
+Post-setup, fill in:
+1. Persona placeholders: `.agents/personas/*.md`
+2. Steering docs: `.agents/steering/*.md`
+3. Project memory: `.agents/memory/project-memory.md`
+4. Hook session-start message: `.agents/hooks/hooks.json`
 
 ## CLI
 
 ```
-agents-platform init <path>          Bootstrap a new project from scaffold
-agents-platform sync [--all]         Sync to projects [--dry-run] [--tooling-only]
-agents-platform build                Build AGENTS.md and tool configs (run in project dir)
-agents-platform lint                 Lint .agents/ content (run in project dir)
-agents-platform signoff              Full quality gate: build + lint + verify
-agents-platform validate             Check all projects for issues
-agents-platform add-stack <name>     Create a new stack skeleton
-agents-platform list-stacks          Show all available stacks
-agents-platform list-projects        Show registered projects and their stacks
-agents-platform list-renderers       Show available AI tool renderers
+agents-platform setup <path> [--auto]   Interactive or agent-friendly setup
+agents-platform init <path>             Bootstrap from scaffold
+agents-platform sync [--all]            Sync to projects [--dry-run] [--tooling-only]
+agents-platform build                   Build AGENTS.md and tool configs
+agents-platform lint                    Lint .agents/ content
+agents-platform signoff                 Full quality gate: build + lint + verify
+agents-platform validate                Check all projects for issues
+agents-platform add-stack <name>        Create a new stack skeleton
+agents-platform list-stacks             Show all available stacks
+agents-platform list-projects           Show registered projects and their stacks
+agents-platform list-renderers          Show available AI tool renderers
 ```
 
 ## Layout
 
 ```
 agents-platform/
-├── bin/agents-platform.mjs          # CLI entry point
-├── sync.mjs                         # Sync engine
-├── update-skills.mjs                # Pull latest from upstream repos
-├── bootstrap.mjs                    # Scaffold + sync for new projects
-├── projects.json                    # Registered project paths
-├── global/.agents/skills/           # 26 tool-level skills (symlinked to ~/.agents/)
-├── shared/
-│   └── .agents/
-│       ├── skills/                  # 18 shared skills (all projects)
-│       ├── stacks/                  # 30 technology stacks
-│       ├── rules/                   # Universal rules
-│       └── skills-manifest.json     # Tracks 76 upstream sources
-├── scaffold/.agents/                # Template for new projects
-└── tooling/                         # Build scripts + renderers
-    └── renderers/                   # claude, kiro, gemini, opencode, factory
+├── bin/agents-platform.mjs              # CLI entry point
+├── sync.mjs                             # Sync engine (5 layers + global)
+├── update-skills.mjs                    # Pull latest from upstream repos
+├── interactive-init.mjs                 # Interactive setup wizard
+├── projects.json                        # Registered project paths
+├── global/.agents/
+│   ├── skills/                          # 22 tool-level skills
+│   ├── skills-manifest.json             # Tracks upstream sources
+│   └── mcp/servers.json                 # 5 global MCP servers
+├── shared/.agents/
+│   ├── skills/                          # Shared skills (all projects)
+│   ├── stacks/                          # 30 technology stacks
+│   │   └── <stack>/
+│   │       ├── skills/                  # Stack-specific skills
+│   │       ├── rules/                   # Stack-specific rules
+│   │       ├── commands/                # Stack-specific commands
+│   │       └── stack.toml
+│   ├── rules/                           # 7 universal rules
+│   └── skills-manifest.json             # Tracks 76 upstream sources
+├── scaffold/.agents/                    # Template for new projects
+│   ├── personas/                        # 9 role-based personas
+│   ├── commands/                        # 19 universal commands
+│   ├── steering/                        # 10 project context docs
+│   ├── rules/                           # 3 scaffold rules
+│   ├── hooks/                           # 4 safety hooks
+│   └── memory/                          # Project memory template
+└── tooling/
+    └── renderers/                       # claude, kiro, gemini, opencode, factory
 ```
 
 ## Stacks
 
-Each stack is a directory under `shared/.agents/stacks/` containing skills and rules for a specific technology:
+30 technology stacks. Projects opt in via `profile.toml`:
 
-```toml
-# shared/.agents/stacks/laravel-api/stack.toml
-[stack]
-name = "laravel-api"
-description = "Laravel API patterns and conventions"
-requires = []
-```
+`tanstack-fullstack` · `tanstack-frontend` · `laravel-api` · `nextjs` · `nestjs` · `flutter` · `cloudflare` · `sentry` · `tailwind` · `better-auth` · `neon-kysely` · `neon-eloquent` · `typeorm` · `bullmq` · `firebase` · `payments-laravel` · `payments-typescript` · `payments-nestjs` · `laravel-cloud` · `laravel-reverb` · `laravel-horizon` · `spatie` · `bouncer` · `meilisearch` · `zustand` · `tiptap` · `cloudinary` · `resend` · `capacitor` · `maps`
 
-Projects opt in via `profile.toml`:
+## Upstream Sources
 
-```toml
-# my-project/.agents/profile.toml
-stacks = ["laravel-api", "flutter", "cloudflare", "sentry", "tailwind"]
-```
+76 project skills auto-updated from open-source repos:
 
-Run `agents-platform list-stacks` to see all 30 stacks.
-
-## Skills
-
-**147 total** — 76 upstream (auto-updatable) + 71 custom.
-
-### Upstream (76 skills from 12 repos)
-
-Auto-updated via `bun update-skills.mjs --all`. Sources include:
-
-| Source | What |
-|--------|------|
-| `getsentry/sentry-for-ai` | Sentry SDKs + workflow |
-| `iSerter/laravel-claude-agents` | Laravel patterns |
-| `cloudflare/skills` | Workers, Durable Objects, Wrangler |
-| `vercel-labs/next-skills` | Next.js best practices |
-| `tanstack/agent-skills` | TanStack Query/Router/Start |
-| `anthropics/skills` | Frontend design, webapp testing |
-| `sergiodxa/agent-skills` | React, JS, async, accessibility |
-| `ibelick/ui-skills` | UI validation, accessibility, metadata |
-
-### Custom (71 skills)
-
-Hand-written for your conventions. Examples:
-- `tanstack-four-layer-arch` — Transport → Application → Domain → Repository
-- `laravel-api-conventions` — Controller → Service → Model, ApiResponseTrait
-- `flutter-conventions` — Riverpod, GoRouter, Dio, Freezed
-- `financial-patterns` — Decimal precision, Naira/kobo, currency formatting
-- `paystack-laravel` / `paystack-nestjs` — Payment provider integrations
-
-### Payment Stacks (split by framework)
-
-| Stack | Skills | Projects |
-|-------|--------|----------|
-| `payments-laravel` | paystack-laravel, nomba-laravel, squadco-laravel | Projavi, DeliveryNexus |
-| `payments-typescript` | nomba-typescript, squadco-typescript | LivestockAI |
-| `payments-nestjs` | paystack-nestjs | Eweko |
-
-## Managed Projects
-
-| Project | Stack | Stacks | Skills (local) |
-|---------|-------|--------|----------------|
-| LivestockAI | TanStack Start + Cloudflare Workers + Better Auth + Kysely/Neon | 9 | 71 (13 local) |
-| Projavi | Laravel API + TanStack frontend + Flutter mobile + Cloudflare | 14 | 99 (6 local) |
-| DeliveryNexus | Laravel API + TanStack frontend + Flutter mobile + Multi-tenant | 16 | 116 (21 local) |
-| Eweko | Next.js + NestJS + TypeORM + BullMQ + Cloudflare | 10 | 58 (5 local) |
-
-## Adding a New Project
-
-```bash
-# 1. Bootstrap
-agents-platform init ~/projects/new-app --toolchains kiro,claude
-
-# 2. Configure stacks
-vim ~/projects/new-app/.agents/profile.toml
-
-# 3. Sync
-agents-platform sync --all
-
-# 4. Build tool configs
-cd ~/projects/new-app && bun .agents/scripts/build.mjs
-```
-
-## Adding a New Stack
-
-```bash
-agents-platform add-stack prisma
-# Creates shared/.agents/stacks/prisma/ with skills/, rules/, stack.toml
-# Add SKILL.md files, then declare in project profile.toml files
-```
-
-## Global Skills
-
-26 tool-level skills (workflow, code quality, agent orchestration) live at `~/.agents/skills/` via symlinks. Shared across all AI tools:
-
-```
-~/.kiro/skills/brainstorming   → ~/.agents/skills/brainstorming → agents-platform/global/...
-~/.claude/skills/brainstorming → ~/.agents/skills/brainstorming → agents-platform/global/...
-```
-
-## For AI Agents
-
-If you're an AI agent helping a user set up agents-platform for a new project, follow this procedure:
-
-### 1. Detect the tech stack
-
-Scan the project root for:
-- `package.json` → check dependencies for `next`, `@tanstack/react-start`, `@nestjs/core`, `react`
-- `composer.json` → check for `laravel/framework`
-- `pubspec.yaml` → Flutter project
-- `wrangler.toml` → Cloudflare Workers deployment
-
-### 2. Map dependencies to stacks
-
-| If you find... | Add stack |
-|---|---|
-| `@tanstack/react-start` | `tanstack-fullstack` |
-| `@tanstack/react-router` (no start) | `tanstack-frontend` |
-| `next` | `nextjs` |
-| `@nestjs/core` | `nestjs` |
-| `laravel/framework` | `laravel-api` |
-| Flutter `pubspec.yaml` | `flutter` |
-| `wrangler.toml` | `cloudflare` |
-| `tailwindcss` | `tailwind` |
-| `@sentry/*` or `sentry/*` | `sentry` |
-| `better-auth` | `better-auth` |
-| `kysely` | `neon-kysely` |
-| `typeorm` | `typeorm` |
-| `bullmq` or `@nestjs/bullmq` | `bullmq` |
-| `@paystack/*` or paystack integration | `payments-laravel` / `payments-typescript` / `payments-nestjs` (match framework) |
-
-### 3. Generate profile.toml
-
-```toml
-[project]
-name = "<project-name>"
-
-[toolchains]
-enabled = ["kiro", "claude"]
-
-stacks = ["<detected-stacks>"]
-```
-
-### 4. Run setup
-
-```bash
-cd /path/to/agents-platform
-
-# Auto mode — no prompts, uses detected stacks (agent-friendly)
-agents-platform setup /path/to/project --auto
-
-# Or manual
-agents-platform init /path/to/project
-# Then edit .agents/profile.toml with detected stacks
-agents-platform sync --all
-cd /path/to/project && bun .agents/scripts/build.mjs
-```
-
-### 5. Verify
-
-```bash
-ls /path/to/project/.agents/skills/  # Should show skills matching declared stacks
-```
+[Sentry](https://github.com/getsentry/sentry-for-ai) · [Cloudflare](https://github.com/cloudflare/skills) · [Vercel](https://github.com/vercel-labs/next-skills) · [TanStack](https://github.com/tanstack/agent-skills) · [Anthropic](https://github.com/anthropics/skills) · [Laravel](https://github.com/iSerter/laravel-claude-agents) · [Firebase](https://github.com/nicholasgriffintn/firebase-agent-skills) · [shadcn/ui](https://github.com/shadcn-ui/ui) · [Neon](https://github.com/neondatabase/agent-skills) · [sergiodxa](https://github.com/sergiodxa/agent-skills) · [ibelick](https://github.com/ibelick/ui-skills)
 
 ## Testing
 

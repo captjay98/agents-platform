@@ -13,20 +13,21 @@ Distribute skills, personas, commands, rules, and project context to AI agents �
 
 ## The Problem
 
-You have multiple projects with different tech stacks. AI agents give generic advice because they don't know your conventions, architecture, or team roles. Manually configuring each project's agent setup leads to drift, duplication, and stale patterns.
+You have multiple projects with different tech stacks. AI agents give generic advice because they don't know your conventions, architecture, or team roles. Manually configuring each project leads to drift, duplication, and stale patterns.
 
 ## The Solution
 
 ```
 agents-platform (central hub)
      │
-     ├── 147 skills      (76 auto-updated from open-source repos)
-     ├── 9 personas       (role-based agent identities)
-     ├── 22 commands      (executable workflows / runbooks)
-     ├── 7+ rules         (coding constraints per stack)
-     ├── 10 steering docs (project context)
-     ├── 5 renderers      (Claude, Kiro, Gemini, OpenCode, Factory)
-     ├── 30 stacks        (technology-specific bundles)
+     ├── 154 project skills    (76 auto-updated from open-source repos)
+     ├── 22 global skills      (workflow, quality, research — all tools)
+     ├── 9 personas            (role-based agent identities)
+     ├── 27 commands           (19 universal + 8 stack-scoped)
+     ├── 31 rules              (7 shared + 3 scaffold + 21 stack-scoped)
+     ├── 5 renderers           (Claude, Kiro, Gemini, OpenCode, Factory)
+     ├── 5 global MCP servers  (sequential-thinking, tavily, Context7, semgrep, exa)
+     ├── 30 stacks             (technology-specific bundles)
      │
      └── sync ──► Project A (picks stacks → gets matching config)
                   Project B (different stacks → different config)
@@ -37,50 +38,25 @@ agents-platform (central hub)
 | Component | What it does |
 |-----------|-------------|
 | **Skills** | Technical knowledge — patterns, conventions, integrations |
-| **Personas** | Role-based identities: backend-engineer, frontend-engineer, qa-engineer, security-engineer, etc. |
-| **Commands** | Executable workflows: code-review, deploy, incident-commander, performance-audit |
-| **Rules** | Coding constraints agents must follow: git-safety, guard-clauses, no-todos |
+| **Personas** | Role-based identities: backend-engineer, frontend-engineer, qa-engineer, etc. |
+| **Commands** | Executable workflows: code-review, deploy, migrate, debug, incident-commander |
+| **Rules** | Coding constraints: git-safety, guard-clauses, no-todos, stack-specific rules |
 | **Steering** | Project context: product map, tech stack, coding standards, testing guidelines |
-| **Hooks** | Auto-triggered behaviors on session start |
+| **Hooks** | Safety guardrails: conventional commits, branch protection, lockfile protection |
 | **Memory** | Institutional knowledge that persists across sessions |
-
-## Before / After
-
-**Without agents-platform:**
-
-```typescript
-// Agent produces generic code
-app.post('/api/orders', async (req, res) => {
-  const order = await db.query('INSERT INTO orders ...')
-  res.json(order)
-})
-```
-
-**With agents-platform:**
-
-```typescript
-// Agent follows your four-layer architecture, error handling, and auth patterns
-export const createOrderFn = createServerFn({ method: 'POST' })
-  .inputValidator(createOrderSchema)
-  .handler(async ({ data }) => {
-    return withErrorBoundary('orders.create', 'orders', async () => {
-      const session = await requireAuth()
-      return await createOrderApplication(session.user.id, data)
-    })
-  })
-```
+| **Global MCP** | MCP servers shared across all AI tools (reasoning, search, security) |
 
 ## Supported AI Tools
 
 | Tool | Renderer | Output |
 |------|----------|--------|
-| Claude Code | `claude.mjs` | `.claude/CLAUDE.md` |
+| Claude Code | `claude.mjs` | `.claude/CLAUDE.md` + skills |
 | Kiro | `kiro.mjs` | `.kiro/` + subagent templates |
-| Gemini | `gemini.mjs` | `.gemini/` |
-| OpenCode | `opencode.mjs` | `.opencode/` |
-| Factory | `factory.mjs` | `.factory/FACTORY.md` |
+| Gemini | `gemini.mjs` | `.gemini/` (reads `.agents/` directly) |
+| OpenCode | `opencode.mjs` | `.opencode/` + `opencode.json` |
+| Factory | `factory.mjs` | `.factory/FACTORY.md` + skills |
 
-Renderers are pluggable — drop a `.mjs` file in `tooling/renderers/` and it's auto-discovered.
+Renderers are pluggable — drop a `.mjs` file in `tooling/renderers/`.
 
 ## Personas
 
@@ -88,7 +64,21 @@ Renderers are pluggable — drop a `.mjs` file in `tooling/renderers/` and it's 
 
 `backend-engineer` · `frontend-engineer` · `fullstack-engineer` · `devops-engineer` · `security-engineer` · `qa-engineer` · `product-architect` · `data-analyst` · `mobile-engineer`
 
-Each includes autonomous instructions, real code patterns, critical constraints, and delegation priorities.
+## Commands
+
+27 executable workflows. 19 universal (all projects) + 8 stack-scoped (only matching projects):
+
+**Universal:** code-review, debug, migrate, refactor, dependency-update, commit-plan, execute, plan-feature, prime, quickstart, release-readiness, test-coverage, ui-audit, accessibility-audit, incident-commander, performance-audit, sync-docs, neon-setup, update-devlog
+
+**Stack-scoped:** cloudflare-deploy/debug/setup (cloudflare stack), sentry-setup/triage (sentry stack), laravel-cloud-deploy/debug/setup (laravel-cloud stack)
+
+## Global MCP
+
+5 MCP servers managed by the platform, synced to all 5 AI tools:
+
+`sequential-thinking` · `tavily` · `Context7` · `semgrep` · `exa`
+
+Add/remove a server in `global/.agents/mcp/servers.json` → sync propagates to all tools.
 
 ## Stacks
 
@@ -105,17 +95,14 @@ Each includes autonomous instructions, real code patterns, critical constraints,
 ## Quick Start
 
 ```bash
-# Install
 git clone <repo-url> && cd agents-platform
 bun install && bun link
 
-# Interactive setup (auto-detects tech stack)
+# Interactive setup
 agents-platform setup ~/projects/my-app
 
-# Or manual
-agents-platform init ~/projects/my-app
-vim ~/projects/my-app/.agents/profile.toml
-agents-platform sync --all
+# Or agent-friendly (no prompts)
+agents-platform setup ~/projects/my-app --auto
 
 # Check health
 agents-platform status
@@ -125,12 +112,14 @@ agents-platform status
 
 | | |
 |---|---|
-| **Skills** | 147 (76 upstream + 71 custom) |
+| **Project skills** | 154 (76 upstream + 78 custom) |
+| **Global skills** | 22 (21 upstream + 1 custom) |
 | **Personas** | 9 role-based identities |
-| **Commands** | 22 executable workflows |
+| **Commands** | 27 (19 universal + 8 stack-scoped) |
+| **Rules** | 31 (7 shared + 3 scaffold + 21 stack) |
 | **Stacks** | 30 technology bundles |
 | **Renderers** | 5 AI tools supported |
-| **Global skills** | 26 tool-level skills |
+| **Global MCP** | 5 servers across all tools |
 
 ---
 
