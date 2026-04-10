@@ -55,6 +55,7 @@ function collectGeneratedFiles() {
     '.kiro/steering',
     '.kiro/hooks',
     '.kiro/settings/hooks.json',
+    '.kiro/settings/mcp.json',
     '.kiro/README.md',
     '.factory/droids',
     '.factory/commands',
