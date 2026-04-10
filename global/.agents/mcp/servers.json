@@ -41,13 +41,6 @@
         "mcp"
       ],
       "disabled": false
-    },
-    "exa": {
-      "url": "https://mcp.exa.ai/mcp",
-      "autoApprove": [
-        "web_search_exa"
-      ],
-      "disabled": false
     }
   }
 }
