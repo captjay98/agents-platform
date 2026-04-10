@@ -1,0 +1,4 @@
+[stack]
+name = "gemini-api"
+description = "Gemini API development — models, function calling, Live API, Interactions API"
+requires = []
