@@ -133,6 +133,12 @@ export function renderKiro(canonical, options = {}) {
     template.description = persona.description || template.description
     template.prompt = `file://./${persona.id}.md`
 
+    // Ensure all agents can discover skills progressively
+    const resources = new Set(template.resources || [])
+    resources.add('file://AGENTS.md')
+    resources.add('skill://.kiro/skills/**/SKILL.md')
+    template.resources = [...resources]
+
     writeUtf8(path.join(agentDir, `${persona.id}.json`), JSON.stringify(template, null, 2) + '\n')
     writeUtf8(path.join(agentDir, `${persona.id}.md`), renderKiroAgentMarkdown(persona, template))
   }
