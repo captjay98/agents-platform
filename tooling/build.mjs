@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {
   AGENTS_ROOT,
+  GENERATED_FILE_TARGETS,
   ROOT,
   hashString,
   loadCanonical,
@@ -37,41 +38,7 @@ function generateRootAgentsMd(canonical, enabledToolchains) {
 }
 
 function collectGeneratedFiles() {
-  const targets = [
-    'AGENTS.md',
-    '.claude/agents',
-    '.claude/commands',
-    '.claude/skills',
-    '.claude/CLAUDE.md',
-    '.claude/settings.json',
-    '.gemini/agents',
-    '.gemini/commands',
-    '.gemini/GEMINI.md',
-    '.gemini/hooks.json',
-    '.gemini/settings.json',
-    '.kiro/agents',
-    '.kiro/prompts',
-    '.kiro/skills',
-    '.kiro/steering',
-    '.kiro/hooks',
-    '.kiro/settings/hooks.json',
-    '.kiro/settings/mcp.json',
-    '.kiro/README.md',
-    '.factory/droids',
-    '.factory/commands',
-    '.factory/skills',
-    '.factory/rules',
-    '.factory/memories.md',
-    '.factory/settings.json',
-    '.factory/mcp.json',
-    '.factory/FACTORY.md',
-    '.opencode/agents',
-    '.opencode/commands',
-    '.opencode/skills',
-    '.opencode/RULES.md',
-    '.opencode/plugins/hooks.generated.ts',
-    'opencode.json',
-  ]
+  const targets = GENERATED_FILE_TARGETS
 
   const files = []
   for (const target of targets) {

@@ -401,3 +401,45 @@ export function renderMcpConfig(mcpServers, format = 'kiro') {
 
   return servers
 }
+
+/**
+ * Canonical list of generated file/directory targets.
+ * Shared between build.mjs (manifest collection) and verify.mjs (manifest verification).
+ * If the build writes a file, it must be in this list. If it's not build-managed, don't add it.
+ */
+export const GENERATED_FILE_TARGETS = [
+  'AGENTS.md',
+  '.mcp.json',
+  '.claude/agents',
+  '.claude/commands',
+  '.claude/skills',
+  '.claude/CLAUDE.md',
+  '.claude/settings.json',
+  '.gemini/agents',
+  '.gemini/commands',
+  '.gemini/GEMINI.md',
+  '.gemini/hooks.json',
+  '.gemini/settings.json',
+  '.kiro/agents',
+  '.kiro/prompts',
+  '.kiro/skills',
+  '.kiro/steering',
+  '.kiro/hooks',
+  '.kiro/settings/hooks.json',
+  '.kiro/settings/mcp.json',
+  '.kiro/README.md',
+  '.factory/droids',
+  '.factory/commands',
+  '.factory/skills',
+  '.factory/rules',
+  '.factory/memories.md',
+  '.factory/settings.json',
+  '.factory/mcp.json',
+  '.factory/FACTORY.md',
+  '.opencode/agents',
+  '.opencode/commands',
+  '.opencode/skills',
+  '.opencode/RULES.md',
+  '.opencode/plugins/hooks.generated.ts',
+  'opencode.json',
+]
