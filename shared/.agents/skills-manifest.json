@@ -532,6 +532,27 @@
       "target": "skills",
       "method": "npx-skills",
       "installed": "2026-04-09"
+    },
+    "gemini-api-dev": {
+      "source": "google-gemini/gemini-skills",
+      "skill": "gemini-api-dev",
+      "target": "stacks/gemini-api",
+      "method": "npx-skills",
+      "installed": "2026-04-10"
+    },
+    "gemini-live-api-dev": {
+      "source": "google-gemini/gemini-skills",
+      "skill": "gemini-live-api-dev",
+      "target": "stacks/gemini-api",
+      "method": "npx-skills",
+      "installed": "2026-04-10"
+    },
+    "gemini-interactions-api": {
+      "source": "google-gemini/gemini-skills",
+      "skill": "gemini-interactions-api",
+      "target": "stacks/gemini-api",
+      "method": "npx-skills",
+      "installed": "2026-04-10"
     }
   }
 }
