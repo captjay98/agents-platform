@@ -118,6 +118,22 @@ vim global/.agents/mcp/servers.json
 agents-platform sync --all
 ```
 
+**Project-level MCP** is separate and user-managed. Each project has `.agents/mcp/servers.json` for project-specific servers (database, monitoring, framework tools). The platform provides an empty template — users fill it in:
+
+```json
+{
+  "version": 1,
+  "servers": {
+    "postgres": {
+      "command": "bunx",
+      "args": ["@modelcontextprotocol/server-postgres@0.6.2", "${DATABASE_URL}"]
+    }
+  }
+}
+```
+
+At runtime, tools merge both layers: global (from `~/`) + project (from the project dir).
+
 ### Global Skills
 
 22 tool-level skills available across all projects and all AI tools. These are workflow, quality, and research skills — not project-specific.
