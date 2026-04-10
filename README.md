@@ -94,11 +94,33 @@ laravel-cloud-deploy/debug/setup → laravel-cloud stack only
 | `semgrep` | Code security scanning |
 | `exa` | Web search |
 
-Source of truth: `global/.agents/mcp/servers.json`. Sync writes to each tool's global config.
+**How it works:**
+
+Source of truth: `global/.agents/mcp/servers.json`. Sync merges platform servers into each tool's global config:
+
+| Tool | Config file | Key |
+|------|-------------|-----|
+| Kiro | `~/.kiro/settings/mcp.json` | `mcpServers` |
+| Gemini | `~/.gemini/settings.json` | `mcpServers` |
+| OpenCode | `~/.config/opencode/opencode.json` | `mcp` |
+| Claude | `~/claude/mcp.json` | `mcpServers` |
+| Factory | `~/.factory/mcp.json` | `mcpServers` |
+
+Merge strategy: platform servers overwrite, user-added servers preserved. Existing config keys (model, plugins, etc.) are never touched.
+
+**Adding a global MCP server:**
+
+```bash
+# Edit source of truth
+vim global/.agents/mcp/servers.json
+
+# Sync to all tools
+agents-platform sync --all
+```
 
 ### Global Skills
 
-22 tool-level skills available across all projects and all AI tools:
+22 tool-level skills available across all projects and all AI tools. These are workflow, quality, and research skills — not project-specific.
 
 | Source | Count | Skills |
 |--------|-------|--------|
@@ -108,7 +130,63 @@ Source of truth: `global/.agents/mcp/servers.json`. Sync writes to each tool's g
 | anthropics/skills | 1 | writing-skills |
 | custom | 1 | documentation-standards |
 
-Sync manages symlinks to `~/.agents/skills/` and mirrors to all tool dirs (`~/.kiro/skills/`, `~/.claude/skills/`, etc.).
+**How it works:**
+
+```
+agents-platform/global/.agents/skills/brainstorming/
+         │  sync (symlink)
+         ▼
+~/.agents/skills/brainstorming
+         │  sync (symlink — mirrors to all tool dirs)
+         ▼
+~/.kiro/skills/brainstorming
+~/.claude/skills/brainstorming
+~/.factory/skills/brainstorming
+~/.opencode/skills/brainstorming
+```
+
+Both hops are managed by sync. Add a skill → all tools get it. Remove a skill → stale symlinks cleaned automatically. User-installed skills (real directories, not symlinks) are never touched.
+
+**Updating global skills:**
+
+```bash
+# Update all from obra/superpowers
+npx skills add obra/superpowers --all -g
+
+# Update tavily skills
+npx skills add tavily-ai/skills --all -g
+
+# Then sync to propagate
+agents-platform sync --all
+```
+
+Sources tracked in `global/.agents/skills-manifest.json`.
+
+## Before / After
+
+Without agents-platform:
+
+```typescript
+// Agent produces generic code
+app.post('/api/orders', async (req, res) => {
+  const order = await db.query('INSERT INTO orders ...')
+  res.json(order)
+})
+```
+
+With agents-platform:
+
+```typescript
+// Agent follows your four-layer architecture, error handling, and auth patterns
+export const createOrderFn = createServerFn({ method: 'POST' })
+  .inputValidator(createOrderSchema)
+  .handler(async ({ data }) => {
+    return withErrorBoundary('orders.create', 'orders', async () => {
+      const session = await requireAuth()
+      return await createOrderApplication(session.user.id, data)
+    })
+  })
+```
 
 ## How It Works
 
@@ -121,6 +199,8 @@ When you run `agents-platform sync`, five layers apply in order:
 | 2. Scaffold | `scaffold/.agents/` | Skip existing | Project templates (personas, commands, steering) |
 | 3. Shared | `shared/.agents/` | Skip existing | Universal skills and rules |
 | 4. Stacks | `shared/.agents/stacks/<name>/` | Skills/rules overwrite, commands skip existing | Stack-specific content |
+
+**Stack-scoped commands:** Stacks can include commands (e.g., `cloudflare-deploy` in the cloudflare stack). These use `skipExisting` — delivered once, then the project owns them. A project without the cloudflare stack never gets cloudflare commands.
 
 ## Quick Start
 
