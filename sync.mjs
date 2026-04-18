@@ -249,15 +249,24 @@ const MCP_TARGETS = [
   { name: 'factory', path: () => path.join(os.homedir(), '.factory', 'mcp.json'), key: 'mcpServers', preserve: [] },
 ]
 
+// Transform server config to OpenCode's expected format
+function toOpenCodeFormat(server) {
+  const { command, args, disabled, autoApprove, env, ...rest } = server
+  const mapped = { type: 'local', command: [command, ...(Array.isArray(args) ? args : [])], enabled: !disabled, ...rest }
+  if (env && typeof env === 'object') mapped.environment = env
+  return mapped
+}
+
 // Resolve $VAR and ${VAR} references in MCP env fields from process.env
 function resolveEnvVars(servers) {
   const resolved = JSON.parse(JSON.stringify(servers))
   for (const server of Object.values(resolved)) {
-    if (!server.env) continue
-    for (const [key, val] of Object.entries(server.env)) {
+    const envObj = server.env || server.environment
+    if (!envObj) continue
+    for (const [key, val] of Object.entries(envObj)) {
       if (typeof val !== 'string') continue
       const m = val.match(/^\$\{?([A-Z_][A-Z0-9_]*)\}?$/)
-      if (m && process.env[m[1]]) server.env[key] = process.env[m[1]]
+      if (m && process.env[m[1]]) envObj[key] = process.env[m[1]]
     }
   }
   return resolved
@@ -285,7 +294,9 @@ export function syncGlobalMcp({ dryRun = false } = {}) {
     // Merge: platform servers overwrite, user servers preserved
     const merged = { ...existing }
     for (const [name, server] of Object.entries(platformServers)) {
-      merged[name] = server
+      if (target.name === 'opencode') merged[name] = toOpenCodeFormat(server)
+      else if (target.name === 'gemini') { const { disabled, autoApprove, type, ...rest } = server; merged[name] = rest }
+      else { const { type, ...rest } = server; merged[name] = rest }
     }
 
     // Remove servers that were previously platform-managed but no longer in source
