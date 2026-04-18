@@ -149,8 +149,8 @@ export const GeneratedHooks = async ({ directory, worktree }) => {
         })
 
         if (result.exitCode !== 0) {
-          const details = [result.stdout, result.stderr].filter(Boolean).join('\n')
-          const message = 'Hook blocked tool execution: ' + hook.id + (details ? '\n' + details : '')
+          const details = [result.stdout, result.stderr].filter(Boolean).join('\\n')
+          const message = 'Hook blocked tool execution: ' + hook.id + (details ? '\\n' + details : '')
           throw new Error(message)
         }
       }
