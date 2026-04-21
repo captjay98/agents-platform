@@ -71,7 +71,7 @@ function toGeminiFrontmatter(persona) {
   if (fm.model) gemini.model = String(fm.model)
   // Rebuild markdown with Gemini-compatible frontmatter
   const yamlLines = Object.entries(gemini).map(([k, v]) => {
-    if (Array.isArray(v)) return `${k}:\n${v.map(i => `  - ${i}`).join('\n')}`
+    if (Array.isArray(v)) return `${k}:\n${v.map(i => `  - "${i}"`).join('\n')}`
     return `${k}: ${v}`
   })
   return `---\n${yamlLines.join('\n')}\n---\n${persona.body || ''}`
