@@ -56,12 +56,37 @@ function mapHooks(hooks, { strict }) {
   return { hooks: compact, warnings }
 }
 
+function toGeminiFrontmatter(persona) {
+  const fm = persona.frontmatter || {}
+  const gemini = { name: persona.id, description: String(fm.description || '') }
+  gemini.kind = 'local'
+  // tools must be an array of tool name strings
+  if (fm.tools && typeof fm.tools === 'object' && !Array.isArray(fm.tools)) {
+    gemini.tools = Object.keys(fm.tools).filter(k => fm.tools[k])
+  } else if (Array.isArray(fm.tools)) {
+    gemini.tools = fm.tools
+  } else {
+    gemini.tools = ['*']
+  }
+  if (fm.model) gemini.model = String(fm.model)
+  // Rebuild markdown with Gemini-compatible frontmatter
+  const yamlLines = Object.entries(gemini).map(([k, v]) => {
+    if (Array.isArray(v)) return `${k}:\n${v.map(i => `  - ${i}`).join('\n')}`
+    return `${k}: ${v}`
+  })
+  return `---\n${yamlLines.join('\n')}\n---\n${persona.body || ''}`
+}
+
 export function renderGemini(canonical, options = {}) {
   const strict = Boolean(options.strict)
   const prettyName = titleCase(options.projectName || 'Project')
   const warnings = []
 
-  writeMarkdownSet(canonical.personas, path.join(ROOT, '.gemini', 'agents'))
+  const agentDir = path.join(ROOT, '.gemini', 'agents')
+  resetDir(agentDir)
+  for (const persona of canonical.personas) {
+    writeUtf8(path.join(agentDir, `${persona.id}.md`), toGeminiFrontmatter(persona))
+  }
 
   const commandDir = path.join(ROOT, '.gemini', 'commands')
   resetDir(commandDir)
